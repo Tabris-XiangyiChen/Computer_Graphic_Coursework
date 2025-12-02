@@ -127,6 +127,7 @@
     <ClInclude Include="core.h" />
     <ClInclude Include="GamesEngineeringBase.h" />
     <ClInclude Include="renderer.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="vertexLayoutCache.h" />
     <ClInclude Include="mesh_3.h" />
     <ClInclude Include="pipline.h" />
