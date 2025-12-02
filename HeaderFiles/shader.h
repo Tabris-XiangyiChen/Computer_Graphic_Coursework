@@ -12,11 +12,12 @@ enum class Shader_Type
 };
 class Shader
 {
+public:
 	std::string name;
 	ID3DBlob* shader;
 
 	//different types struct of constantbuffer
-	std::unordered_map<std::string, ConstantBuffer_re> constantBuffers;
+	std::unordered_map<std::string, ConstantBuffer> constantBuffers;
 
 	static std::string readfile(std::string filename)
 	{
@@ -63,7 +64,7 @@ class Shader
 		unsigned int totalSize = 0;
 		for (int i = 0; i < desc.ConstantBuffers; i++)
 		{
-			ConstantBuffer_re buffer;
+			ConstantBuffer buffer;
 			ID3D12ShaderReflectionConstantBuffer* constantBuffer = reflection->GetConstantBufferByIndex(i);
 			D3D12_SHADER_BUFFER_DESC cbDesc;
 			constantBuffer->GetDesc(&cbDesc);
@@ -82,7 +83,7 @@ class Shader
 				ConstantBuffer_totalSize += bufferVariable.size;
 			}
 			buffer.cbSizeInBytes = ConstantBuffer_totalSize;
-			constantBuffers.insert(std::pair<std::string, ConstantBuffer_re>(buffer.name, buffer));
+			constantBuffers.insert(std::pair<std::string, ConstantBuffer>(buffer.name, buffer));
 		}
 		return totalSize;
 	}
@@ -90,16 +91,42 @@ class Shader
 
 class Shader_Manager
 {
+	
+public:
 	std::unordered_map<std::string, Shader> shaders;
 
 	void init()
 	{
-
+		load("VertexShader", Shader_Type::VERTEX);
+		load("PixelShader", Shader_Type::PIXEL);
 	}
 
 	void load(std::string shader_name, Shader_Type type)
 	{
 		Shader shader;
-		
+		std::string folder_path = "Shaders/";
+		std::string fileName = folder_path + shader_name + ".cso";
+		std::wstring wideName = std::wstring(fileName.begin(), fileName.end());
+		std::ifstream compiledFile(fileName);
+		if (compiledFile.is_open()) {//check if there is compiled shader code
+			D3DReadFileToBlob(wideName.c_str(), &shader.shader);
+		}
+		else {//if not, generate a .cso file
+			shader.init(std::string(folder_path + shader_name + ".hlsl"), type, shader_name);
+			D3DWriteBlobToFile(shader.shader, wideName.c_str(), false);
+		}
+		shader.reflect();
+		shaders.insert(std::pair<std::string, Shader>(shader_name, shader));
+	}
+
+	void update(std::string shader_name, std::string cb_name, std::string var_name, void* data)
+	{
+		if (shaders.find(shader_name) != shaders.end())
+		{
+			if (shaders[shader_name].constantBuffers.find(cb_name) != shaders[shader_name].constantBuffers.end())
+			{
+				shaders[shader_name].constantBuffers[cb_name].update(var_name, data);
+			}
+		}
 	}
 };

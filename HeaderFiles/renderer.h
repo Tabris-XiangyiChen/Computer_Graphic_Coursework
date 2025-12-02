@@ -4,7 +4,7 @@
 #include <map>
 #include "pipline.h"
 #include "constantbuffer.h"
-#include "mesh_3.h"
+#include "mesh.h"
 
 static std::string readfile(std::string filename)
 {
@@ -18,7 +18,7 @@ class Renderer
 {
 public:
 	//ScreenSpaceTriangle vertices;
-	Mesh_2 mesh;
+	Mesh mesh;
 	//Mesh mesh;
 
 	//shaders
@@ -38,11 +38,11 @@ public:
 	//ConstantBuffer constantBuffer;
 	//ConstantBuffer_re constantBuffer;
 	//ConstantBuffer2 cb;
-	std::unordered_map<std::string, ConstantBuffer_re> vs_constantBuffer;
-	std::unordered_map<std::string, ConstantBuffer_re> ps_constantBuffer;
+	std::unordered_map<std::string, ConstantBuffer> vs_constantBuffer;
+	std::unordered_map<std::string, ConstantBuffer> ps_constantBuffer;
 	//std::vector<ConstantBuffer_re> ;
 
-	unsigned int reflect(ID3DBlob* shader, std::unordered_map<std::string, ConstantBuffer_re>& _constantbuffer)
+	unsigned int reflect(ID3DBlob* shader, std::unordered_map<std::string, ConstantBuffer>& _constantbuffer)
 	{
 		std::unordered_map<std::string, unsigned int>  map;
 		ID3D12ShaderReflection* reflection;
@@ -52,7 +52,7 @@ public:
 		unsigned int totalSize = 0;
 		for (int i = 0; i < desc.ConstantBuffers; i++)
 		{
-			ConstantBuffer_re buffer;
+			ConstantBuffer buffer;
 			ID3D12ShaderReflectionConstantBuffer* constantBuffer = reflection->GetConstantBufferByIndex(i);
 			D3D12_SHADER_BUFFER_DESC cbDesc;
 			constantBuffer->GetDesc(&cbDesc);
@@ -170,12 +170,12 @@ public:
 		for (auto& pair : vs_constantBuffer)
 		{
 			//i.init_2(_core, 2);
-			pair.second.init_2(_core, 2);
+			pair.second.init(_core, 2);
 		}
 		for (auto& pair : ps_constantBuffer)
 		{
 			//i.init_2(_core, 2);
-			pair.second.init_2(_core, 2);
+			pair.second.init(_core, 2);
 		}
 	}
 

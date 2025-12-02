@@ -1,9 +1,10 @@
 ﻿#pragma once
-#include "window.h"
-#include "core.h"
-#include "renderer.h"
-#include "GamesEngineeringBase.h"
-#include "mesh_3.h"
+#include "HeaderFiles/window.h"
+//#include "core.h"
+//#include "renderer.h"
+#include "HeaderFiles/GamesEngineeringBase.h"
+//#include "mesh.h"
+#include "HeaderFiles/model.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -17,18 +18,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	win.create("My Window", WINDOW_WIDTH, WINDOW_HEIGHT, 100, 0);
 	core.init(win.hwnd, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	//Renderitem renderer;
-	Renderer renderer;
-	renderer.init(&core);
-
-	//ConstantBuffer1 constBufferCPU;
-	//constBufferCPU.time = 0;
 	ConstantBuffer2 constBufferCPU2;
 	constBufferCPU2.time = 0;
 
 	GamesEngineeringBase::Timer timer;
 
-
+	Shader_Manager sm;
+	sm.init();
+	Object_Manager cube;
+	cube.init(&core, &sm);
 
 	while (1) {
 		float dt = timer.dt();
@@ -43,11 +41,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//Matrix p = Matrix::PerspectiveLH(2 * M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		Matrix w;
 
-		//Matrix vp = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f).mul(v);
-		//Matrix vp = Matrix::PerspectiveLH(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f).mul(v);
-		//Matrix vp = P.mul(v);
-		//Matrix vp;
-
 		for (int i = 0; i < 4; i++)
 		{
 			float angle = constBufferCPU2.time + (i * M_PI / 2.0f);
@@ -58,8 +51,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		core.beginFrame();
 		win.processMessages();
-
-		renderer.draw(&core, &v, &p);
+		cube.update(v, p);
+		cube.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{

@@ -4,7 +4,7 @@
 #include "core.h"
 #include "vertexLayoutCache.h"
 
-class Mesh_2
+class Mesh
 {
 public:
 
