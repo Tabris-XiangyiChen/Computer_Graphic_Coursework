@@ -569,6 +569,15 @@ public:
 		return mul(pVec);
 	}
 
+	Matrix Translate(Vec4 pVec)
+	{
+		Matrix a;
+		a[3] = pVec.x;
+		a[7] = pVec.y;
+		a[11] = pVec.z;
+		return a;
+	}
+
 	Matrix Rotate_X(float angle)
 	{
 		Normalize();
@@ -609,6 +618,14 @@ public:
 		m[5] = Sy;
 		m[10] = Sz;
 		return *this;
+	}
+	static Matrix Scaling(Vec3 pVec)
+	{
+		Matrix s;
+		s[0] = pVec.x;
+		s[5] = pVec.y;
+		s[10] = pVec.z;
+		return s;
 	}
 
 	Matrix mul(const Matrix& matrix) const

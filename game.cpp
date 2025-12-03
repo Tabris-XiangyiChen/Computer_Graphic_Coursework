@@ -28,6 +28,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Object_Manager cube;
 	cube.init(&core, &sm);
 
+	Object_Manager cube2;
+	cube2.init(&core, &sm);
+
+	Object tree;
+	tree.init(&core, &sm, "Resource/Models/acacia_003.gem");
+
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
@@ -39,7 +45,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//Matrix p = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		//Matrix v = Matrix::LookAtLH(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
 		//Matrix p = Matrix::PerspectiveLH(2 * M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		Matrix w;
+		Matrix world;
+		world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
+		Matrix vp = p.mul(v);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -51,8 +59,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		core.beginFrame();
 		win.processMessages();
-		cube.update(v, p);
-		cube.draw(&core);
+		//cube.update(v, p);
+		//cube.draw(&core);
+		//Matrix v2 = v.Translate(Vec4(5.0f, 0, 0, 0)).mul(v);
+		//cube2.update(v2, p);
+		//cube2.draw(&core);
+		tree.update(world, vp);
+		tree.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{
