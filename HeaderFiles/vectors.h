@@ -15,6 +15,11 @@ static T lerp(const T a, const T b, float t)
 	return a * (1.0f - t) + (b * t);
 }
 
+template<typename T>
+static T clamp(const T value, const T minValue, const T maxValue)
+{
+	return std::max(std::min(value, maxValue), minValue);
+}
 
 class Vec3
 {
@@ -485,7 +490,7 @@ public:
 	}
 };
 
-class Matrix
+class alignas(64) Matrix
 {
 public:
 	union
@@ -512,6 +517,26 @@ public:
 		m[13] = 0.f;
 		m[14] = 0.f;
 		m[15] = 1.f;
+	}
+
+	Matrix(float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33)
+	{
+		a[0][0] = m00;
+		a[0][1] = m01;
+		a[0][2] = m02;
+		a[0][3] = m03;
+		a[1][0] = m10;
+		a[1][1] = m11;
+		a[1][2] = m12;
+		a[1][3] = m13;
+		a[2][0] = m20;
+		a[2][1] = m21;
+		a[2][2] = m22;
+		a[2][3] = m23;
+		a[3][0] = m30;
+		a[3][1] = m31;
+		a[3][2] = m32;
+		a[3][3] = m33;
 	}
 
 	Matrix Normalize()
@@ -578,6 +603,15 @@ public:
 		return a;
 	}
 
+	static Matrix Translate(const Vec3& v)
+	{
+		Matrix mat;
+		mat.a[0][3] = v.x;
+		mat.a[1][3] = v.y;
+		mat.a[2][3] = v.z;
+		return mat;
+	}
+
 	Matrix Rotate_X(float angle)
 	{
 		Normalize();
@@ -611,6 +645,40 @@ public:
 		return *this;
 	}
 
+	static Matrix rotateX(float theta)
+	{
+		Matrix mat;
+		float ct = cosf(theta);
+		float st = sinf(theta);
+		mat.m[5] = ct;
+		mat.m[6] = st;
+		mat.m[9] = -st;
+		mat.m[10] = ct;
+		return mat;
+	}
+	static Matrix rotateY(float theta)
+	{
+		Matrix mat;
+		float ct = cosf(theta);
+		float st = sinf(theta);
+		mat.m[0] = ct;
+		mat.m[2] = -st;
+		mat.m[8] = st;
+		mat.m[10] = ct;
+		return mat;
+	}
+	static Matrix rotateZ(float theta)
+	{
+		Matrix mat;
+		float ct = cosf(theta);
+		float st = sinf(theta);
+		mat.m[0] = ct;
+		mat.m[1] = st;
+		mat.m[4] = -st;
+		mat.m[5] = ct;
+		return mat;
+	}
+
 	Matrix Scaling(float Sx, float Sy, float Sz)
 	{
 		Normalize();
@@ -619,13 +687,14 @@ public:
 		m[10] = Sz;
 		return *this;
 	}
-	static Matrix Scaling(Vec3 pVec)
+
+	static Matrix Scaling(const Vec3& v)
 	{
-		Matrix s;
-		s[0] = pVec.x;
-		s[5] = pVec.y;
-		s[10] = pVec.z;
-		return s;
+		Matrix mat;
+		mat.m[0] = v.x;
+		mat.m[5] = v.y;
+		mat.m[10] = v.z;
+		return mat;
 	}
 
 	Matrix mul(const Matrix& matrix) const
@@ -677,6 +746,14 @@ public:
 		return mat;
 	}
 
+	Matrix Transpose()
+	{
+		return Matrix(a[0][0], a[1][0], a[2][0], a[3][0],
+			a[0][1], a[1][1], a[2][1], a[3][1],
+			a[0][2], a[1][2], a[2][2], a[3][2],
+			a[0][3], a[1][3], a[2][3], a[3][3]);
+	}
+
 	float& operator[](unsigned int index)
 	{
 		return m[index];
@@ -712,47 +789,28 @@ public:
 		return inv;
 	}
 
-	static Matrix Perspective_projection_matrix(float _theta, float _aspect, float _far, float _near)
+	static Matrix perspective(const float fov, float aspect, const float n, const float f) // FOV in degrees, outputs transposed Matrix for DX
 	{
-		Matrix M;
-		M.m[0] = 1 / _aspect / tan(_theta);
-		M.m[5] = 1 / tan(_theta);
-		M.m[10] = _far / (_far - _near);
-		M.m[11] = -_far * _near / (_far - _near);
-		M.m[14] = 1;
-		M.m[15] = 0;
-		return M;
+		Matrix pers;
+		memset(pers.m, 0, sizeof(float) * 16);
+		float t = 1.0f / (tanf(fov * 0.5f * M_PI / 180.0f));
+		pers.a[0][0] = t / aspect;
+		pers.a[1][1] = t;
+		pers.a[2][2] = f / (f - n);
+		pers.a[2][3] = -(f * n) / (f - n);
+		pers.a[3][2] = 1.0f;
+		return pers;
 	}
 
-	static Matrix PerspectiveLH(float fov, float aspect, float nearZ, float farZ)
-	{
-		Matrix M;
-		float y = 1.0f / tanf(fov / 2);
-		float x = y / aspect;
-
-		M.m[0] = x;    M.m[1] = 0;    M.m[2] = 0;                        M.m[3] = 0;
-		M.m[4] = 0;    M.m[5] = y;    M.m[6] = 0;                        M.m[7] = 0;
-		M.m[8] = 0;    M.m[9] = 0;    M.m[10] = farZ / (farZ - nearZ);   M.m[11] = 1;
-		M.m[12] = 0;   M.m[13] = 0;   M.m[14] = (-nearZ * farZ) / (farZ - nearZ);
-		M.m[15] = 0;
-
-		return M;
-	}
-
-
-	static Matrix LookAt_matrix(Vec4 _from, Vec4 _to, Vec4 _up)
-	{
-		Vec4 dir = (_from - _to) / (_from - _to).length();
-		Vec4 right = _up.Cross(dir);
-		Vec4 up = dir.Cross(right);
-		Matrix M;
-		M.m[0] = right.x; M.m[1] = right.y; M.m[2] = right.z; M.m[3] = -_from.Dot(right); M.m[4] = up.x;
-		M.m[5] = up.y;	  M.m[6] = up.z;    M.m[7] = -_from.Dot(up);
-		M.m[8] = dir.x;
-		M.m[9] = dir.y;
-		M.m[10] = dir.z;
-		M.m[11] = -_from.Dot(dir);
-		return M;
+	static Matrix perspective_PI(float fov, float aspect, float _near, float _far) {
+		Matrix proM;
+		memset(proM.m, 0, 16 * sizeof(float));
+		proM.a[0][0] = 1 / (aspect * (tan(fov / 2)));//no pi
+		proM.a[1][1] = 1 / (tan(fov / 2));
+		proM.a[2][2] = _far / (_far - _near);
+		proM.a[2][3] = -(_far * _near) / (_far - _near);
+		proM.a[3][2] = 1;
+		return proM;
 	}
 
 	static Matrix lookAtMatrix(Vec3 from, Vec3 to, Vec3 up) {
@@ -769,71 +827,45 @@ public:
 		return lookat;
 	}
 
-
-	static Matrix LookAt_matrix(Vec3 _from, Vec3 _to, Vec3 _up)
+	static Matrix lookAt(const Vec3& from, const Vec3& to, const Vec3& up)
 	{
-		Vec3 dir = (_from - _to) / (_from - _to).length();
-		Vec3 right = _up.Cross(dir);
-		Vec3 up = dir.Cross(right);
-		Matrix M;
-		M.m[0] = right.x;
-		M.m[1] = right.y;
-		M.m[2] = right.z;
-		M.m[3] = -_from.Dot(right);
-		M.m[4] = up.x;
-		M.m[5] = up.y;
-		M.m[6] = up.z;
-		M.m[7] = -_from.Dot(up);
-		M.m[8] = dir.x;
-		M.m[9] = dir.y;
-		M.m[10] = dir.z;
-		M.m[11] = -_from.Dot(dir);
-		return M;
+		Matrix mat;
+		Vec3 dir = (to - from).Normalize();
+		Vec3 left = Cross(up, dir).Normalize();
+		Vec3 newUp = Cross(dir, left);
+		mat.a[0][0] = left.x;
+		mat.a[0][1] = left.y;
+		mat.a[0][2] = left.z;
+		mat.a[1][0] = newUp.x;
+		mat.a[1][1] = newUp.y;
+		mat.a[1][2] = newUp.z;
+		mat.a[2][0] = dir.x;
+		mat.a[2][1] = dir.y;
+		mat.a[2][2] = dir.z;
+		mat.a[0][3] = -Dot(from, left);
+		mat.a[1][3] = -Dot(from, newUp);
+		mat.a[2][3] = -Dot(from, dir);
+		mat.a[3][3] = 1;
+		return mat;
 	}
 
-	static Matrix LookAtLH(Vec3 eye, Vec3 at, Vec3 up)
+	static Matrix rotateAxis(const Vec3& axis, float angle)
 	{
-		Vec3 zaxis = (at - eye).Normalize();       // Forward
-		Vec3 xaxis = up.Cross(zaxis).Normalize();  // Right
-		Vec3 yaxis = zaxis.Cross(xaxis);            // Up
+		Vec3 u = axis.Normalize();
+		float c = cosf(angle);
+		float s = sinf(angle);
+		float t = 1.0f - c;
 
-		Matrix M;
-		M.m[0] = xaxis.x;
-		M.m[1] = yaxis.x;
-		M.m[2] = zaxis.x;
-		M.m[3] = 0;
-
-		M.m[4] = xaxis.y;
-		M.m[5] = yaxis.y;
-		M.m[6] = zaxis.y;
-		M.m[7] = 0;
-
-		M.m[8] = xaxis.z;
-		M.m[9] = yaxis.z;
-		M.m[10] = zaxis.z;
-		M.m[11] = 0;
-
-		M.m[12] = -xaxis.Dot(eye);
-		M.m[13] = -yaxis.Dot(eye);
-		M.m[14] = -zaxis.Dot(eye);
-		M.m[15] = 1;
-
-		return M;
-	}
-
-	static Matrix projectionMatrix(float fov, float aspect, float _near, float _far) {
-		Matrix proM;
-		memset(proM.m, 0, 16 * sizeof(float));
-		proM.a[0][0] = 1 / (aspect * (tan(fov / 2)));//no pi
-		proM.a[1][1] = 1 / (tan(fov / 2));
-		proM.a[2][2] = _far / (_far - _near);
-		proM.a[2][3] = -(_far * _near) / (_far - _near);
-		proM.a[3][2] = 1;
-		return proM;
+		return Matrix(
+			t * u.x * u.x + c, t * u.x * u.y + s * u.z, t * u.x * u.z - s * u.y, 0,
+			t * u.x * u.y - s * u.z, t * u.y * u.y + c, t * u.y * u.z + s * u.x, 0,
+			t * u.x * u.z + s * u.y, t * u.y * u.z - s * u.x, t * u.z * u.z + c, 0,
+			0, 0, 0, 1
+		);
 	}
 };
 
-class Quaternuion
+class Quaternion
 {
 public:
 	union {
@@ -841,42 +873,44 @@ public:
 		float q[4];
 	};
 
-	Quaternuion() : a(0.f), b(0.f), c(0.f), d(0.f) {}
+	Quaternion() : a(0.f), b(0.f), c(0.f), d(0.f) {}
 
-	Quaternuion(Vec4& pVec) : a(pVec.x), b(pVec.y), c(pVec.z), d(pVec.w) {}
+	Quaternion(Vec4& pVec) : a(pVec.x), b(pVec.y), c(pVec.z), d(pVec.w) {}
 
-	Quaternuion(float _a, float _b, float _c, float _d) : a(_a), b(_b), c(_c), d(_d) {}
+	Quaternion(float _a, float _b, float _c, float _d) : a(_a), b(_b), c(_c), d(_d) {}
 
 	float Mangnitude() const
 	{
 		return sqrtf(SQ(a) + SQ(b) + SQ(c) + SQ(d));
 	}
 
-	float Mangnitude(Quaternuion q) const
+	float Mangnitude(Quaternion q) const
 	{
 		return sqrtf(SQ(q.a) + SQ(q.b) + SQ(q.c) + SQ(q.d));
 	}
 
-	Quaternuion Normalize()
+	Quaternion Normalize()
 	{
 		float mag = Mangnitude();
 		return { a / mag,  b / mag , c / mag , d / mag };
 	}
 
-	Quaternuion operator*(const float val) const
+	Quaternion operator*(const float val) const
 	{
-		return Quaternuion(a * val, b * val, c * val, d * val);
+		return Quaternion(a * val, b * val, c * val, d * val);
 	}
 
-	//Vec4& operator*=(const Vec4& pVec)
-	//{
-	//	v[0] *= pVec.v[0];
-	//	v[1] *= pVec.v[1];
-	//	v[2] *= pVec.v[2];
-	//	return *this;
-	//}
+	Quaternion operator*(Quaternion q1)
+	{
+		Quaternion v;
+		v.a = ((d * q1.a) + (a * q1.d) + (b * q1.c) - (c * q1.b));
+		v.b = ((d * q1.b) - (a * q1.c) + (b * q1.d) + (c * q1.a));
+		v.c = ((d * q1.c) + (a * q1.b) - (b * q1.a) + (c * q1.d));
+		v.d = ((d * q1.d) - (a * q1.a) - (b * q1.b) - (c * q1.c));
+		return v;
+	}
 
-	Quaternuion& operator*=(const float val)
+	Quaternion& operator*=(const float val)
 	{
 		a *= val;
 		b *= val;
@@ -885,7 +919,7 @@ public:
 		return *this;
 	}
 
-	Quaternuion Multuply(Quaternuion q1, Quaternuion q2)
+	Quaternion Multuply(Quaternion q1, Quaternion q2)
 	{
 		return {
 			q1.d * q2.a + q1.a * q2.d + q1.b * q2.c - q1.c * q2.b,
@@ -895,32 +929,41 @@ public:
 		};
 	}
 
-	float dot(Quaternuion q1, Quaternuion q2)
+	float dot(Quaternion q1, Quaternion q2)
 	{
 		return q1.d * q2.d + q1.a * q2.a + q1.b * q2.b + q1.c * q2.c;
 	}
 
-	float theta(Quaternuion q1, Quaternuion q2)
+	float theta(Quaternion q1, Quaternion q2)
 	{
 		float d = dot(q1, q2);
 		return d < 0 ? acosf(-d) : acosf(d);
 	}
 
-	Quaternuion Conjugate()
+	Quaternion Conjugate()
 	{
-		return Quaternuion(-a, -b, -c, d);
+		a = -a;
+		b = -b;
+		c = -c;
+		return Quaternion(-a, -b, -c, d);
 	}
 
-	Quaternuion Unary_negate()
+	void invert()
 	{
-		return Quaternuion(-a, -b, -c, -d);
+		Conjugate();
+		Normalize();
+	}
+
+	Quaternion Unary_negate()
+	{
+		return Quaternion(-a, -b, -c, -d);
 	}
 
 	//Spherical Linear Interpolate
-	Quaternuion Slerp(Quaternuion a, Quaternuion b, float t)
+	Quaternion Slerp(Quaternion a, Quaternion b, float t)
 	{
-		Quaternuion A = a.Normalize();
-		Quaternuion B = b.Normalize();
+		Quaternion A = a.Normalize();
+		Quaternion B = b.Normalize();
 		float ta = theta(A, B);
 		float q_A = sinf(ta * (1 - t)) / sinf(ta);
 		float q_B = sinf(ta * t) / sinf(ta);
@@ -932,12 +975,36 @@ public:
 		};
 	}
 
-	Quaternuion Slerp_with_length(Quaternuion a, Quaternuion b, float t)
+	static Quaternion slerp(Quaternion q1, Quaternion q2, float t)
+	{
+		Quaternion qr;
+		float dp = q1.a * q2.a + q1.b * q2.b + q1.c * q2.c + q1.d * q2.d;
+		Quaternion q11 = dp < 0 ? -q1 : q1;
+		dp = dp > 0 ? dp : -dp;
+		float theta = acosf(clamp(dp, -1.0f, 1.0f));
+		if (theta == 0)
+		{
+			return q1;
+		}
+		float d = sinf(theta);
+		float a = sinf((1 - t) * theta);
+		float b = sinf(t * theta);
+		float coeff1 = a / d;
+		float coeff2 = b / d;
+		qr.a = coeff1 * q11.a + coeff2 * q2.a;
+		qr.b = coeff1 * q11.b + coeff2 * q2.b;
+		qr.c = coeff1 * q11.c + coeff2 * q2.c;
+		qr.d = coeff1 * q11.d + coeff2 * q2.d;
+		qr.Normalize();
+		return qr;
+	}
+
+	Quaternion Slerp_with_length(Quaternion a, Quaternion b, float t)
 	{
 		float a_len = a.Mangnitude();
 		float b_len = b.Mangnitude();
 
-		Quaternuion dir_lerp = Slerp(a, b, t);
+		Quaternion dir_lerp = Slerp(a, b, t);
 
 		float len_lerp = a_len + (b_len - a_len) * t;
 
@@ -957,6 +1024,31 @@ public:
 		return m;
 	}
 
+	void rotateAboutAxis(Vec3 pt, float angle, Vec3 axis)
+	{
+		Quaternion q1, p, qinv;
+		q1.a = sinf(0.5f * angle) * axis.x;
+		q1.b = sinf(0.5f * angle) * axis.y;
+		q1.c = sinf(0.5f * angle) * axis.z;
+		q1.d = cosf(0.5f * angle);
+		p.a = pt.x;
+		p.b = pt.y;
+		p.c = pt.z;
+		p.d = 0;
+		qinv = q1;
+		qinv.invert();
+		q1 = q1 * p;
+		q1 = q1 * qinv;
+		a = q1.a;
+		b = q1.b;
+		c = q1.c;
+		d = q1.d;
+	}
+
+	Quaternion operator-()
+	{
+		return Quaternion(-a, -b, -c, -d);
+	}
 	//Quaternuion Inverse()
 	//{
 	//	return Conjugate() / SQ(Mangnitude());
@@ -1107,4 +1199,42 @@ public:
 	//	return Matrix(tangent, bitangent, normal);
 	//}
 
+};
+
+class Frame
+{
+public:
+	Vec3 u;
+	Vec3 v;
+	Vec3 w;
+	void fromVector(const Vec3& n)
+	{
+		// Gram-Schmit
+		w = n.Normalize();
+		if (fabsf(w.x) > fabsf(w.y))
+		{
+			float l = 1.0f / sqrtf(w.x * w.x + w.z * w.z);
+			u = Vec3(w.z * l, 0.0f, -w.x * l);
+		}
+		else
+		{
+			float l = 1.0f / sqrtf(w.y * w.y + w.z * w.z);
+			u = Vec3(0, w.z * l, -w.y * l);
+		}
+		v = Cross(w, u);
+	}
+	void fromVectorTangent(const Vec3& n, const Vec3& t)
+	{
+		w = n.Normalize();
+		u = t.Normalize();
+		v = Cross(w, u);
+	}
+	Vec3 toLocal(const Vec3& vec) const
+	{
+		return Vec3(Dot(vec, u), Dot(vec, v), Dot(vec, w));
+	}
+	Vec3 toWorld(const Vec3& vec) const
+	{
+		return ((u * vec.x) + (v * vec.y) + (w * vec.z));
+	}
 };

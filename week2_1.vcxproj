@@ -136,6 +136,7 @@
     <ClCompile Include="SourceFiles\window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HeaderFiles\animation.h" />
     <ClInclude Include="HeaderFiles\constantbuffer.h" />
     <ClInclude Include="HeaderFiles\core.h" />
     <ClInclude Include="HeaderFiles\GamesEngineeringBase.h" />

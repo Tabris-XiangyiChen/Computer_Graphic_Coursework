@@ -89,28 +89,31 @@ public:
 class Object
 {
 public:
+	std::string name;
 	StaticMeshs meshs;
 	Shader_Manager* shader_manager;
-	PSOManager psos;
+	PSOManager* psos;
 
-	void init(Core* core, Shader_Manager* _shader_manager, std::string filename)
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, std::string filename)
 	{
 		shader_manager = _shader_manager;
+		psos = _psos;
+		name = filename;
 		meshs.init(core, filename);
-		cbinit(core);
-		psos.createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, meshs.meshes[0]->inputLayoutDesc);
+		//cbinit(core);
+		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, meshs.meshes[0]->inputLayoutDesc);
 	}
 	//constantbuffer initalize
-	void cbinit(Core* core)
-	{
-		for (auto& shader : shader_manager->shaders)
-		{
-			for (auto& cb : shader.second.constantBuffers)
-			{
-				cb.second.init(core, 1024);
-			}
-		}
-	}
+	//void cbinit(Core* core)
+	//{
+	//	for (auto& shader : shader_manager->shaders)
+	//	{
+	//		for (auto& cb : shader.second.constantBuffers)
+	//		{
+	//			cb.second.init(core, 1024);
+	//		}
+	//	}
+	//}
 
 	void update(Matrix planeWorld, Matrix vp) {
 		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
@@ -124,7 +127,6 @@ public:
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, vs.second.getGPUAddress());
 			vs.second.next();
-			//core->rootSignature.
 			slot++;
 		}
 		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
@@ -138,7 +140,7 @@ public:
 	void draw(Core* core) {
 		core->beginRenderPass();
 		apply(core);
-		psos.bind(core, "Object");
+		psos->bind(core, "Object");
 		meshs.draw(core);
 	}
 };

@@ -54,7 +54,7 @@ public:
 		}
 	}
 
-	unsigned int reflect()
+	unsigned int reflect(Core* core)
 	{
 		std::unordered_map<std::string, unsigned int>  map;
 		ID3D12ShaderReflection* reflection;
@@ -83,6 +83,7 @@ public:
 				ConstantBuffer_totalSize += bufferVariable.size;
 			}
 			buffer.cbSizeInBytes = ConstantBuffer_totalSize;
+			buffer.init(core, 1024);
 			constantBuffers.insert(std::pair<std::string, ConstantBuffer>(buffer.name, buffer));
 		}
 		return totalSize;
@@ -95,13 +96,13 @@ class Shader_Manager
 public:
 	std::unordered_map<std::string, Shader> shaders;
 
-	void init()
+	void init(Core* core )
 	{
-		load("VertexShader", Shader_Type::VERTEX);
-		load("PixelShader", Shader_Type::PIXEL);
+		load(core, "VertexShader", Shader_Type::VERTEX);
+		load(core, "PixelShader", Shader_Type::PIXEL);
 	}
 
-	void load(std::string shader_name, Shader_Type type)
+	void load(Core* core, std::string shader_name, Shader_Type type)
 	{
 		Shader shader;
 		std::string folder_path = "Shaders/";
@@ -115,7 +116,7 @@ public:
 			shader.init(std::string(folder_path + shader_name + ".hlsl"), type, shader_name);
 			D3DWriteBlobToFile(shader.shader, wideName.c_str(), false);
 		}
-		shader.reflect();
+		shader.reflect(core);
 		shaders.insert(std::pair<std::string, Shader>(shader_name, shader));
 	}
 

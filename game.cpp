@@ -24,7 +24,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	GamesEngineeringBase::Timer timer;
 
 	Shader_Manager sm;
-	sm.init();
+	sm.init(&core);
+	PSOManager psos;
 	Object_Manager cube;
 	cube.init(&core, &sm);
 
@@ -32,15 +33,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	cube2.init(&core, &sm);
 
 	Object tree;
-	tree.init(&core, &sm, "Resource/Models/acacia_003.gem");
+	tree.init(&core, &sm, &psos, "Resource/Models/acacia_003.gem");
 
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
 
 		Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
-		Matrix v = Matrix::lookAtMatrix(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		Matrix p = Matrix::projectionMatrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
+		Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
+		Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		//Matrix v = Matrix::LookAt_matrix(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
 		//Matrix p = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		//Matrix v = Matrix::LookAtLH(from, Vec3(0, 1, 0), Vec3(0, 1, 0));

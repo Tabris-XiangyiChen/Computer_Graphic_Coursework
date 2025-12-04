@@ -77,6 +77,12 @@ public:
 		inputLayoutDesc = VertexLayoutCache::getStaticLayout();
 	}
 
+	void init_animation(Core* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices)
+	{
+		init(core, &vertices[0], sizeof(STATIC_VERTEX), vertices.size(), &indices[0], indices.size());
+		inputLayoutDesc = VertexLayoutCache::getAnimatedLayout();
+	}
+
 	void draw(Core* core)
 	{
 		core->getCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
