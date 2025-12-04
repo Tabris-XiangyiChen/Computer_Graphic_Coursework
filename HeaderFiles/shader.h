@@ -96,7 +96,7 @@ class Shader_Manager
 public:
 	std::unordered_map<std::string, Shader> shaders;
 
-	void init(Core* core )
+	void init(Core* core)
 	{
 		load(core, "VertexShader", Shader_Type::VERTEX);
 		load(core, "PixelShader", Shader_Type::PIXEL);
@@ -128,6 +128,17 @@ public:
 			{
 				shaders[shader_name].constantBuffers[cb_name].update(var_name, data);
 			}
+		}
+	}
+
+	Shader* find(std::string name)
+	{
+		if (shaders.find(name) != shaders.end())
+			return &shaders[name];
+		else
+		{
+			std::cout << "no such shader" << std::endl;
+			return nullptr;
 		}
 	}
 };

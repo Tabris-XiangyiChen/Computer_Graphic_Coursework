@@ -5,6 +5,7 @@
 #include "shader.h"
 #include "pipline.h"
 #include "GEMLoader.h"
+#include "animation.h"
 
 static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 {
@@ -90,7 +91,7 @@ class Object
 {
 public:
 	std::string name;
-	StaticMeshs meshs;
+	StaticMeshs meshes;
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
@@ -99,9 +100,9 @@ public:
 		shader_manager = _shader_manager;
 		psos = _psos;
 		name = filename;
-		meshs.init(core, filename);
+		meshes.init(core, filename);
 		//cbinit(core);
-		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, meshs.meshes[0]->inputLayoutDesc);
+		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, meshes.meshes[0]->inputLayoutDesc);
 	}
 	//constantbuffer initalize
 	//void cbinit(Core* core)
@@ -141,54 +142,106 @@ public:
 		core->beginRenderPass();
 		apply(core);
 		psos->bind(core, "Object");
-		meshs.draw(core);
+		meshes.draw(core);
 	}
 };
 
-class Object_Manager
+class Object_Animation
 {
 public:
-	Cube cube;
-	Shader_Manager* shader_manager;
-	PSOManager psos;
+	std::string name;
+	std::vector<Mesh*> meshes;
+	Animation animation;
 
-	void init(Core* core, Shader_Manager* _shader_manager)
+	Shader_Manager* shader_manager;
+	PSOManager* psos;
+
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, std::string filename)
 	{
 		shader_manager = _shader_manager;
-		cube.init(core);
-		cbinit(core);
-		psos.createPSO(core, "Cube", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, cube.mesh.inputLayoutDesc);
-	}
-	//constantbuffer initalize
-	void cbinit(Core* core)
-	{
-		for (auto& shader : shader_manager->shaders)
-		{
-			for (auto& cb : shader.second.constantBuffers)
-			{
-				cb.second.init(core, 1024);
+		psos = _psos;
+		name = filename;
+
+		shader_manager->load(core, "AnimationShader", Shader_Type::VERTEX);
+		psos->createPSO(core, "AnimationModelPSO", shader_manager->find("AnimationShader")->shader, shader_manager->find("PixelShader")->shader, VertexLayoutCache::getAnimatedLayout());
+		
+		GEMLoader::GEMModelLoader loader;
+		std::vector<GEMLoader::GEMMesh> gemmeshes;
+		GEMLoader::GEMAnimation gemanimation;
+		loader.load(filename, gemmeshes, gemanimation);
+		for (int i = 0; i < gemmeshes.size(); i++) {
+			Mesh* mesh = new Mesh();
+			std::vector<ANIMATED_VERTEX> vertices;
+			for (int j = 0; j < gemmeshes[i].verticesAnimated.size(); j++) {
+				ANIMATED_VERTEX v;
+				memcpy(&v, &gemmeshes[i].verticesAnimated[j], sizeof(ANIMATED_VERTEX));
+				vertices.push_back(v);
 			}
+			mesh->init_animation(core, vertices, gemmeshes[i].indices);
+			meshes.push_back(mesh);
 		}
+		//Bones
+		memcpy(&animation.skeleton.globalInverse, &gemanimation.globalInverse, 16 * sizeof(float));
+		for (int i = 0; i < gemanimation.bones.size(); i++)
+		{
+			Bone bone;
+			bone.name = gemanimation.bones[i].name;
+			memcpy(&bone.offset, &gemanimation.bones[i].offset, 16 * sizeof(float));
+			bone.parentIndex = gemanimation.bones[i].parentIndex;
+			animation.skeleton.bones.push_back(bone);
+		}
+
+		for (int i = 0; i < gemanimation.animations.size(); i++)
+		{
+			std::string name = gemanimation.animations[i].name;
+			AnimationSequence aseq;
+			aseq.ticksPerSecond = gemanimation.animations[i].ticksPerSecond;
+			for (int n = 0; n < gemanimation.animations[i].frames.size(); n++)
+			{
+				AnimationFrame frame;
+				for (int index = 0; index < gemanimation.animations[i].frames[n].positions.size(); index++)
+				{
+					Vec3 p;
+					Quaternion q;
+					Vec3 s;
+					memcpy(&p, &gemanimation.animations[i].frames[n].positions[index], sizeof(Vec3));
+					frame.positions.push_back(p);
+					memcpy(&q, &gemanimation.animations[i].frames[n].rotations[index], sizeof(Quaternion));
+					frame.rotations.push_back(q);
+					memcpy(&s, &gemanimation.animations[i].frames[n].scales[index], sizeof(Vec3));
+					frame.scales.push_back(s);
+				}
+				aseq.frames.push_back(frame);
+			}
+			animation.animations.insert({ name, aseq });
+		}
+
 	}
 
-	void update(Matrix planeWorld, Matrix vp) {
-		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
-		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+	void updateWorld( Matrix& w)
+	{
+		shader_manager->update("AnimationShader", "animatedMeshBuffer", "W", &w);
+	}
+
+	void update(Matrix& planeWorld, Matrix& vp, AnimationInstance* animat) {
+		shader_manager->update("AnimationShader", "animatedMeshBuffer", "W", &planeWorld);
+		shader_manager->update("AnimationShader", "animatedMeshBuffer", "VP", &vp);
+		shader_manager->update("AnimationShader", "animatedMeshBuffer", "bones", animat->matrices);
 	}
 
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
-		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
+		for (auto& vs : shader_manager->shaders["AnimationShader"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, vs.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(0, vs.second.getGPUAddress());
 			vs.second.next();
 			//core->rootSignature.
 			slot++;
 		}
 		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, ps.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
 			slot++;
 		}
@@ -197,7 +250,10 @@ public:
 	void draw(Core* core) {
 		core->beginRenderPass();
 		apply(core);
-		psos.bind(core, "Cube");
-		cube.mesh.draw(core);
+		psos->bind(core, "AnimationModelPSO");
+		for (int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i]->draw(core);
+		}
 	}
 };

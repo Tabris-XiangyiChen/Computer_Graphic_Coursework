@@ -18,7 +18,7 @@ static T lerp(const T a, const T b, float t)
 template<typename T>
 static T clamp(const T value, const T minValue, const T maxValue)
 {
-	return std::max(std::min(value, maxValue), minValue);
+	return max(min(value, maxValue), minValue);
 }
 
 class Vec3

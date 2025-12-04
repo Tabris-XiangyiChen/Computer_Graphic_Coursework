@@ -26,14 +26,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Shader_Manager sm;
 	sm.init(&core);
 	PSOManager psos;
-	Object_Manager cube;
-	cube.init(&core, &sm);
-
-	Object_Manager cube2;
-	cube2.init(&core, &sm);
 
 	Object tree;
-	tree.init(&core, &sm, &psos, "Resource/Models/acacia_003.gem");
+	tree.init(&core, &sm, &psos, "Resource/Tree/acacia_003.gem");
+
+	Object_Animation trex;
+	trex.init(&core, &sm, &psos, "Resource/Trex/Trex.gem");
+	AnimationInstance animatedInstance;
+	animatedInstance.init(&trex.animation, 0);
 
 	while (1) {
 		float dt = timer.dt();
@@ -42,10 +42,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
 		Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
 		Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		//Matrix v = Matrix::LookAt_matrix(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		//Matrix p = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		//Matrix v = Matrix::LookAtLH(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		//Matrix p = Matrix::PerspectiveLH(2 * M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		Matrix world;
 		world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
 		Matrix vp = p.mul(v);
@@ -60,13 +56,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		core.beginFrame();
 		win.processMessages();
-		//cube.update(v, p);
-		//cube.draw(&core);
-		//Matrix v2 = v.Translate(Vec4(5.0f, 0, 0, 0)).mul(v);
-		//cube2.update(v2, p);
-		//cube2.draw(&core);
+
 		tree.update(world, vp);
 		tree.draw(&core);
+
+		animatedInstance.update("run", dt);
+		if (animatedInstance.animationFinished() == true)
+		{
+			animatedInstance.resetAnimationTime();
+		}
+		trex.update(world, vp, &animatedInstance);
+		trex.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{

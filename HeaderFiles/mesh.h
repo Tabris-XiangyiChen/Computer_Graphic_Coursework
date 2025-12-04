@@ -77,9 +77,9 @@ public:
 		inputLayoutDesc = VertexLayoutCache::getStaticLayout();
 	}
 
-	void init_animation(Core* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices)
+	void init_animation(Core* core, std::vector<ANIMATED_VERTEX> vertices, std::vector<unsigned int> indices)
 	{
-		init(core, &vertices[0], sizeof(STATIC_VERTEX), vertices.size(), &indices[0], indices.size());
+		init(core, &vertices[0], sizeof(ANIMATED_VERTEX), vertices.size(), &indices[0], indices.size());
 		inputLayoutDesc = VertexLayoutCache::getAnimatedLayout();
 	}
 
