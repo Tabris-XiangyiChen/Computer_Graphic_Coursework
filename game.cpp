@@ -1,9 +1,10 @@
 ﻿#pragma once
-#include "window.h"
-#include "core.h"
-#include "renderer.h"
-#include "GamesEngineeringBase.h"
-#include "mesh_3.h"
+#include "HeaderFiles/window.h"
+//#include "core.h"
+//#include "renderer.h"
+#include "HeaderFiles/GamesEngineeringBase.h"
+//#include "mesh.h"
+#include "HeaderFiles/model.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -17,36 +18,33 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	win.create("My Window", WINDOW_WIDTH, WINDOW_HEIGHT, 100, 0);
 	core.init(win.hwnd, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	//Renderitem renderer;
-	Renderer renderer;
-	renderer.init(&core);
-
-	//ConstantBuffer1 constBufferCPU;
-	//constBufferCPU.time = 0;
 	ConstantBuffer2 constBufferCPU2;
 	constBufferCPU2.time = 0;
 
 	GamesEngineeringBase::Timer timer;
 
+	Shader_Manager sm;
+	sm.init(&core);
+	PSOManager psos;
 
+	Object tree;
+	tree.init(&core, &sm, &psos, "Resource/Tree/acacia_003.gem");
+
+	Object_Animation trex;
+	trex.init(&core, &sm, &psos, "Resource/Trex/Trex.gem");
+	AnimationInstance animatedInstance;
+	animatedInstance.init(&trex.animation, 0);
 
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
 
 		Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
-		Matrix v = Matrix::lookAtMatrix(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		Matrix p = Matrix::projectionMatrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		//Matrix v = Matrix::LookAt_matrix(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		//Matrix p = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		//Matrix v = Matrix::LookAtLH(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		//Matrix p = Matrix::PerspectiveLH(2 * M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
-		Matrix w;
-
-		//Matrix vp = Matrix::Perspective_projection_matrix(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f).mul(v);
-		//Matrix vp = Matrix::PerspectiveLH(M_PI / 3, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f).mul(v);
-		//Matrix vp = P.mul(v);
-		//Matrix vp;
+		Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
+		Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
+		Matrix world;
+		world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
+		Matrix vp = p.mul(v);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -59,7 +57,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		core.beginFrame();
 		win.processMessages();
 
-		renderer.draw(&core, &v, &p);
+		tree.update(world, vp);
+		tree.draw(&core);
+
+		animatedInstance.update("run", dt);
+		if (animatedInstance.animationFinished() == true)
+		{
+			animatedInstance.resetAnimationTime();
+		}
+		trex.update(world, vp, &animatedInstance);
+		trex.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{

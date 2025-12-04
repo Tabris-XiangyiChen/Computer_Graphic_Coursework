@@ -129,7 +129,7 @@ public:
 			}
 		}
 		adapter = adapters[useAdapterIndex];
-		factory->Release();
+		//factory->Release();
 
 		//Create DX12 Device on Adapter
 		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));

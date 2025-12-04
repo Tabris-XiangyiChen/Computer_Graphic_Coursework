@@ -123,34 +123,39 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="constantbuffer.h" />
-    <ClInclude Include="core.h" />
-    <ClInclude Include="GamesEngineeringBase.h" />
-    <ClInclude Include="renderer.h" />
-    <ClInclude Include="vertexLayoutCache.h" />
-    <ClInclude Include="mesh_3.h" />
-    <ClInclude Include="pipline.h" />
-    <ClInclude Include="vectors.h" />
-    <ClInclude Include="window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="core.cpp" />
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="PixelShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="VertexShader.hlsl">
+    <FxCompile Include="Shaders\AnimationShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\PixelShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="game.cpp" />
+    <ClCompile Include="SourceFiles\core.cpp" />
+    <ClCompile Include="SourceFiles\window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HeaderFiles\animation.h" />
+    <ClInclude Include="HeaderFiles\constantbuffer.h" />
+    <ClInclude Include="HeaderFiles\core.h" />
+    <ClInclude Include="HeaderFiles\GamesEngineeringBase.h" />
+    <ClInclude Include="HeaderFiles\GEMLoader.h" />
+    <ClInclude Include="HeaderFiles\mesh.h" />
+    <ClInclude Include="HeaderFiles\model.h" />
+    <ClInclude Include="HeaderFiles\pipline.h" />
+    <ClInclude Include="HeaderFiles\renderer.h" />
+    <ClInclude Include="HeaderFiles\shader.h" />
+    <ClInclude Include="HeaderFiles\vectors.h" />
+    <ClInclude Include="HeaderFiles\vertexLayoutCache.h" />
+    <ClInclude Include="HeaderFiles\window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

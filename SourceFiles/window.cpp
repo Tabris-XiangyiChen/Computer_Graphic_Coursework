@@ -1,4 +1,4 @@
-#include "window.h"
+#include "../HeaderFiles/window.h"
 
 //global pointer to the window
 Window* window;
