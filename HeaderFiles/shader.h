@@ -104,20 +104,23 @@ public:
 
 	void load(Core* core, std::string shader_name, Shader_Type type)
 	{
-		Shader shader;
-		std::string folder_path = "Shaders/";
-		std::string fileName = folder_path + shader_name + ".cso";
-		std::wstring wideName = std::wstring(fileName.begin(), fileName.end());
-		std::ifstream compiledFile(fileName);
-		if (compiledFile.is_open()) {//check if there is compiled shader code
-			D3DReadFileToBlob(wideName.c_str(), &shader.shader);
+		if (shaders.find(shader_name) == shaders.end())
+		{
+			Shader shader;
+			std::string folder_path = "Shaders/";
+			std::string fileName = folder_path + shader_name + ".cso";
+			std::wstring wideName = std::wstring(fileName.begin(), fileName.end());
+			std::ifstream compiledFile(fileName);
+			if (compiledFile.is_open()) {//check if there is compiled shader code
+				D3DReadFileToBlob(wideName.c_str(), &shader.shader);
+			}
+			else {//if not, generate a .cso file
+				shader.init(std::string(folder_path + shader_name + ".hlsl"), type, shader_name);
+				D3DWriteBlobToFile(shader.shader, wideName.c_str(), false);
+			}
+			shader.reflect(core);
+			shaders.insert(std::pair<std::string, Shader>(shader_name, shader));
 		}
-		else {//if not, generate a .cso file
-			shader.init(std::string(folder_path + shader_name + ".hlsl"), type, shader_name);
-			D3DWriteBlobToFile(shader.shader, wideName.c_str(), false);
-		}
-		shader.reflect(core);
-		shaders.insert(std::pair<std::string, Shader>(shader_name, shader));
 	}
 
 	void update(std::string shader_name, std::string cb_name, std::string var_name, void* data)
