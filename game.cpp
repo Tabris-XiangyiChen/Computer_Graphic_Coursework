@@ -39,8 +39,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
 	Camera_ camera_;
-	camera_.init((float)(WINDOW_WIDTH) , (float)(WINDOW_HEIGHT));
-	camera_.LookAt(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
+	camera_.init_aspect((float)(WINDOW_WIDTH) , (float)(WINDOW_HEIGHT));
+	camera_.init_pos(Vec3(0, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
@@ -66,7 +66,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		win.processMessages();
 
 		//tree.update(world, camera.vp);
-		tree.update(world, camera_.viewProjection);
+		tree.update(world, camera_.view_projection);
 		tree.draw(&core);
 
 		animatedInstance.update("run", dt);
@@ -75,7 +75,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			animatedInstance.resetAnimationTime();
 		}
 		//trex.update(world, camera.vp, &animatedInstance);
-		trex.update(world, camera_.viewProjection, &animatedInstance);
+		trex.update(world, camera_.view_projection, &animatedInstance);
 		trex.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)

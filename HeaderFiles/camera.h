@@ -75,30 +75,28 @@ public:
 class Camera_
 {
 public:
-    Vec3 position;      // 摄像机位置
-    Vec3 target;        // 观察目标
-    Vec3 up;            // 上方向
-    Vec3 forward;       // 前方向
-    Vec3 right;         // 右方向
+    Vec3 position;
+    Vec3 target; 
+    Vec3 up;
+    Vec3 forward;
+    Vec3 right; 
 
-    float fov;          // 视野角度（度）
-    float aspect;       // 宽高比
-    float near_plane;    // 近平面
-    float far_plane;     // 远平面
+    float fov;
+    float aspect;
+    float near_plane;
+    float far_plane;
 
-    // 变换矩阵
     Matrix view;
     Matrix projection;
-    Matrix viewProjection;
+    Matrix view_projection;
 
-    // 控制参数
-    float moveSpeed;
-    float mouseSensitivity;
-    float yaw;          // 水平旋转
-    float pitch;        // 垂直旋转
+    float speed;
+    float mouse_sensitivity;
+    float yaw;
+    float pitch;
 
 public:
-    // 构造函数
+
     Camera_() :
         position(10, 5, 10),
         target(0, 1, 0),
@@ -108,49 +106,59 @@ public:
         aspect(16.0f / 9.0f),
         near_plane(0.01f),
         far_plane(100.0f),
-        moveSpeed(0.01f),
-        mouseSensitivity(0.1f),
-        yaw(-90.0f),
+        speed(0.01f),
+        mouse_sensitivity(0.01f),
+        yaw(0.0f),
         pitch(0.0f)
     {
-        UpdateVectors();
-        UpdateMatrices();
+        update_vectors();
+        update_matrices();
     }
 
-    // 初始化
-    void init(float width, float height)
+    void init_pos(Vec3 _pos, Vec3 _to, Vec3 _up)
     {
-        aspect = width / height;
-        UpdateMatrices();
-    }
-
-    // 更新摄像机
-    void update(Window* window, float dt)
-    {
-        // 处理键盘输入
-        ProcessKeyboard(window, dt);
-
-        // 处理鼠标输入
-        ProcessMouse(window);
-
-        // 更新矩阵
-        UpdateMatrices();
-    }
-
-    // 设置位置和朝向
-    void LookAt(const Vec3& pos, const Vec3& targ, const Vec3& upVec = Vec3(0, 0, 1))
-    {
-        position = pos;
-        target = targ;
-        up = upVec;
+        position = _pos;
+        target = _to;
+        up = _up;
 
         forward = (target - position).Normalize();
         right = forward.Cross(up).Normalize();
 
-        UpdateMatrices();
+        pitch = asinf(forward.z) * 180.0f / M_PI;
+        yaw = atan2f(forward.y, forward.x) * 180.0f / M_PI;
+
+        update_vectors();
+        update_matrices();
     }
 
-    // 设置投影参数
+    void init_aspect(float width, float height)
+    {
+        aspect = width / height;
+        update_matrices();
+    }
+
+    //update the camera's view scale
+    void init_camview(float _fov, float width, float height, float _near_plane, float _far_plane)
+    {
+        fov = _fov;
+        aspect = width / height;
+        near_plane = _near_plane;
+        far_plane = _far_plane;
+        update_matrices();
+    }
+
+
+    void update(Window* window, float dt)
+    {
+
+        ProcessKeyboard(window, dt);
+
+        ProcessMouse_notcenter(window);
+
+        update_matrices();
+    }
+
+
     void SetPerspective(float _fov, float _aspect, float _near, float _far)
     {
         fov = _fov;
@@ -158,44 +166,69 @@ public:
         near_plane = _near;
         far_plane = _far;
         projection = Matrix::perspective(fov, aspect, near_plane, far_plane);
-        viewProjection = projection * view;
+        view_projection = projection * view;
     }
 
 private:
-    // 处理键盘输入
+
     void ProcessKeyboard(Window* window, float dt)
     {
-        float speed = moveSpeed * dt;
+        float s = speed * dt;
 
         if (window->keys['W'])
-            position = position + forward * speed;
+            position = position + forward * s;
 
         if (window->keys['S'])
-            position = position - forward * speed;
+            position = position - forward * s;
 
         if (window->keys['A'])
-            position = position - right * speed;
+            position = position - right * s;
 
         if (window->keys['D'])
-            position = position + right * speed;
+            position = position + right * s;
 
         if (window->keys['Q'])
-            position = position - up * speed;
+            position = position - up * s;
 
         if (window->keys['E'])
-            position = position + up * speed;
+            position = position + up * s;
 
-        // 更新目标点
         target = position + forward;
     }
 
-    // 处理鼠标输入
+
     void ProcessMouse(Window* window)
+    {
+        // 鼠标是否在控制相机
+        if (!window->mouseButtons[0]) return;
+
+        float centerX = window->width * 0.5f;
+        float centerY = window->height * 0.5f;
+
+        float xoffset = window->mousex - centerX;
+        float yoffset = centerY - window->mousey;  // 注意 Y 轴反向
+
+        xoffset *= mouse_sensitivity;
+        yoffset *= mouse_sensitivity;
+
+        yaw += xoffset;
+        pitch += yoffset;
+
+        if (pitch > 89.0f) pitch = 89.0f;
+        if (pitch < -89.0f) pitch = -89.0f;
+
+        update_vectors();
+
+        // move the mouse to screen centre
+        window->SetCursorPos(centerX, centerY);
+    }
+
+    void ProcessMouse_notcenter(Window* window)
     {
         static float lastX = 0, lastY = 0;
         static bool firstMouse = true;
 
-        if (window->mouseButtons[0]) // 左键按下
+        if (window->mouseButtons[0])  // 鼠标右键
         {
             if (firstMouse)
             {
@@ -205,46 +238,30 @@ private:
             }
 
             float xoffset = window->mousex - lastX;
-            float yoffset = lastY - window->mousey; // 反转Y轴
+            float yoffset = lastY - window->mousey;
 
             lastX = window->mousex;
             lastY = window->mousey;
 
-            xoffset *= mouseSensitivity;
-            yoffset *= mouseSensitivity;
+            xoffset *= mouse_sensitivity;
+            yoffset *= mouse_sensitivity;
 
             yaw += xoffset;
             pitch += yoffset;
 
-            // 限制俯仰角
             if (pitch > 89.0f) pitch = 89.0f;
             if (pitch < -89.0f) pitch = -89.0f;
 
-            UpdateVectors();
+            update_vectors();
         }
         else
         {
             firstMouse = true;
         }
-
-        //// 滚轮缩放
-        //if (window->mouseWheelDelta != 0)
-        //{
-        //    fov -= window->mouseWheelDelta * 2.0f;
-        //    if (fov < 1.0f) fov = 1.0f;
-        //    if (fov > 120.0f) fov = 120.0f;
-
-        //    projection = Matrix::perspective(fov * M_PI / 180.0f, aspect, nearPlane, farPlane);
-        //    viewProjection = projection * view;
-
-        //    window->mouseWheelDelta = 0;
-        //}
     }
 
-    // 更新方向向量
-    void UpdateVectors()
+    void update_vectors()
     {
-        // 根据yaw和pitch计算前方向
         Vec3 newForward;
         newForward.x = cos(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
         newForward.y = sin(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
@@ -252,19 +269,17 @@ private:
 
         forward = newForward.Normalize();
 
-        // 重新计算右方向和上方向
         right = forward.Cross(Vec3(0, 0, 1)).Normalize();
         up = right.Cross(forward).Normalize();
 
-        // 更新目标点
         target = position + forward;
     }
 
-    // 更新变换矩阵
-    void UpdateMatrices()
+    // update matrices
+    void update_matrices()
     {
         view = Matrix::lookAt(position, target, up);
         projection = Matrix::perspective(fov, aspect, near_plane, far_plane);
-        viewProjection = projection.mul(view);
+        view_projection = projection.mul(view);
     }
 };
