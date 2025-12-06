@@ -5,6 +5,7 @@
 #include "HeaderFiles/GamesEngineeringBase.h"
 //#include "mesh.h"
 #include "HeaderFiles/model.h"
+#include "HeaderFiles/camera.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -35,16 +36,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	AnimationInstance animatedInstance;
 	animatedInstance.init(&trex.animation, 0);
 
+	Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
+	camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
+	Camera_ camera_;
+	camera_.init((float)(WINDOW_WIDTH) , (float)(WINDOW_HEIGHT));
+	camera_.LookAt(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
 
-		Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
-		Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
-		Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
+		//Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
+		//Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
+		//Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
 		Matrix world;
 		world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
-		Matrix vp = p.mul(v);
+		//Matrix vp = p.mul(v);
+		camera.update(&win, constBufferCPU2.time);
+		camera_.update(&win, constBufferCPU2.time);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -57,7 +65,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		core.beginFrame();
 		win.processMessages();
 
-		tree.update(world, vp);
+		//tree.update(world, camera.vp);
+		tree.update(world, camera_.viewProjection);
 		tree.draw(&core);
 
 		animatedInstance.update("run", dt);
@@ -65,7 +74,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		{
 			animatedInstance.resetAnimationTime();
 		}
-		trex.update(world, vp, &animatedInstance);
+		//trex.update(world, camera.vp, &animatedInstance);
+		trex.update(world, camera_.viewProjection, &animatedInstance);
 		trex.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
