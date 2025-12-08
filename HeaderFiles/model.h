@@ -6,6 +6,7 @@
 #include "pipline.h"
 #include "GEMLoader.h"
 #include "animation.h"
+#include "textureloader.h"
 
 static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 {
@@ -156,6 +157,9 @@ public:
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
+	std::vector<std::string> textureFilenames;
+	Texture_Manager textures;
+
 	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, std::string filename)
 	{
 		shader_manager = _shader_manager;
@@ -177,6 +181,11 @@ public:
 				memcpy(&v, &gemmeshes[i].verticesAnimated[j], sizeof(ANIMATED_VERTEX));
 				vertices.push_back(v);
 			}
+
+			textureFilenames.push_back(gemmeshes[i].material.find("albedo").getValue());
+			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
+			textures.load(core, gemmeshes[i].material.find("albedo").getValue());
+
 			mesh->init_animation(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
@@ -251,9 +260,12 @@ public:
 		core->beginRenderPass();
 		apply(core);
 		psos->bind(core, "AnimationModelPSO");
+
 		for (int i = 0; i < meshes.size(); i++)
 		{
+			shader_manager->updateTexturePS(core, "PixelShader", "tex", textures.find(textureFilenames[i]));
 			meshes[i]->draw(core);
 		}
+
 	}
 };
