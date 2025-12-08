@@ -18,11 +18,6 @@ static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 	return v;
 }
 
-//class Plane
-//{
-//public:
-//
-//};
 
 class Cube
 {
