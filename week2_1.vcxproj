@@ -147,6 +147,7 @@
     <ClInclude Include="HeaderFiles\camera.h" />
     <ClInclude Include="HeaderFiles\constantbuffer.h" />
     <ClInclude Include="HeaderFiles\core.h" />
+    <ClInclude Include="HeaderFiles\debug.h" />
     <ClInclude Include="HeaderFiles\GamesEngineeringBase.h" />
     <ClInclude Include="HeaderFiles\GEMLoader.h" />
     <ClInclude Include="HeaderFiles\mesh.h" />

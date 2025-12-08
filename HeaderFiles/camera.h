@@ -107,7 +107,7 @@ public:
         near_plane(0.01f),
         far_plane(100.0f),
         speed(0.01f),
-        mouse_sensitivity(0.01f),
+        mouse_sensitivity(0.1f),
         yaw(0.0f),
         pitch(0.0f)
     {
@@ -199,8 +199,11 @@ private:
 
     void ProcessMouse(Window* window)
     {
-        // 鼠标是否在控制相机
-        if (!window->mouseButtons[0]) return;
+        static float last_x;
+        static float last_y;
+        //if (!window->mouseButtons[0]) return;
+        if (window->mousex == last_x && window->mousey == last_y)
+            return;
 
         float centerX = window->width * 0.5f;
         float centerY = window->height * 0.5f;
@@ -220,28 +223,27 @@ private:
         update_vectors();
 
         // move the mouse to screen centre
+        last_x = window->mousex;
+        last_y = window->mousey;
         window->SetCursorPos(centerX, centerY);
     }
 
     void ProcessMouse_notcenter(Window* window)
     {
-        static float lastX = 0, lastY = 0;
+        static float last_x = 0, last_y = 0;
         static bool firstMouse = true;
 
-        if (window->mouseButtons[0])  // 鼠标右键
+        if (window->mousex != last_x && window->mousey != last_y)  // 鼠标右键
         {
             if (firstMouse)
             {
-                lastX = window->mousex;
-                lastY = window->mousey;
+                last_x = window->mousex;
+                last_y = window->mousey;
                 firstMouse = false;
             }
 
-            float xoffset = window->mousex - lastX;
-            float yoffset = lastY - window->mousey;
-
-            lastX = window->mousex;
-            lastY = window->mousey;
+            float xoffset = last_x - window->mousex;
+            float yoffset =  window->mousey - last_y;
 
             xoffset *= mouse_sensitivity;
             yoffset *= mouse_sensitivity;
@@ -253,11 +255,18 @@ private:
             if (pitch < -89.0f) pitch = -89.0f;
 
             update_vectors();
+
+            float centerX = window->width * 0.5f;
+            float centerY = window->height * 0.5f;
+            //window->SetCursorPos(centerX, centerY);
         }
         else
         {
             firstMouse = true;
         }
+
+        last_x = window->mousex;
+        last_y = window->mousey;
     }
 
     void update_vectors()

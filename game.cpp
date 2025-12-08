@@ -13,7 +13,10 @@
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR lpCmdLine, int nCmdShow)
 {
-	
+	AllocConsole();
+	FILE* fp;
+	freopen_s(&fp, "CONOUT$", "w", stdout);
+
 	Window win;
 	Core core;
 	win.create("My Window", WINDOW_WIDTH, WINDOW_HEIGHT, 100, 0);
@@ -41,6 +44,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Camera_ camera_;
 	camera_.init_aspect((float)(WINDOW_WIDTH) , (float)(WINDOW_HEIGHT));
 	camera_.init_pos(Vec3(0, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
+
+	std::cout << "out" << std::endl;
 	while (1) {
 		float dt = timer.dt();
 		constBufferCPU2.time += dt;
@@ -48,6 +53,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//Vec3 from = Vec3(11 * cos(constBufferCPU2.time), 5, 11 * sinf(constBufferCPU2.time));
 		//Matrix v = Matrix::lookAt(from, Vec3(0, 1, 0), Vec3(0, 1, 0));
 		//Matrix p = Matrix::perspective(60, (float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT), 0.1f, 80.f);
+
 		Matrix world;
 		world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
 		//Matrix vp = p.mul(v);
@@ -69,7 +75,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		tree.update(world, camera_.view_projection);
 		tree.draw(&core);
 
-		animatedInstance.update("run", dt);
+		animatedInstance.update("attack", dt);
 		if (animatedInstance.animationFinished() == true)
 		{
 			animatedInstance.resetAnimationTime();
@@ -86,4 +92,5 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	}
 	core.flushGraphicsQueue();
 
+	FreeConsole();
 }
