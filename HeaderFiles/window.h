@@ -35,10 +35,5 @@ public:
 
 	void processMessages();
 
-	void SetCursorPos(float x, float y)
-	{
-		POINT p = { (LONG)x, (LONG)y };
-		ClientToScreen(hwnd, &p);
-		::SetCursorPos(p.x, p.y);
-	}
+
 };
