@@ -35,9 +35,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	tree.init(&core, &sm, &psos, "Resource/Tree/acacia_003.gem");
 
 	Object_Animation trex;
-	trex.init(&core, &sm, &psos, "Resource/Trex/Trex.gem");
+	trex.init(&core, &sm, &psos, "Trex");
+	Object_Animation AutomaticCarbine;
+	AutomaticCarbine.init(&core, &sm, &psos, "AutomaticCarbine");
 	AnimationInstance animatedInstance;
 	animatedInstance.init(&trex.animation, 0);
+	AnimationInstance animatedInstance2;
+	animatedInstance2.init(&AutomaticCarbine.animation, 0);
 
 	Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));

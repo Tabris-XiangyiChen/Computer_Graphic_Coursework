@@ -133,6 +133,9 @@
     <FxCompile Include="Shaders\PixelShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\PixelShader1.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\VertexShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
@@ -155,6 +158,8 @@
     <ClInclude Include="HeaderFiles\pipline.h" />
     <ClInclude Include="HeaderFiles\renderer.h" />
     <ClInclude Include="HeaderFiles\shader.h" />
+    <ClInclude Include="HeaderFiles\stb_image.h" />
+    <ClInclude Include="HeaderFiles\textureloader.h" />
     <ClInclude Include="HeaderFiles\vectors.h" />
     <ClInclude Include="HeaderFiles\vertexLayoutCache.h" />
     <ClInclude Include="HeaderFiles\window.h" />

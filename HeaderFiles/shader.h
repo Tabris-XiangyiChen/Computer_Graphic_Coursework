@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include "core.h"
 #include "constantbuffer.h"
+#include "textureloader.h"
+
 enum class Shader_Type
 {
 	VERTEX,
@@ -18,6 +20,8 @@ public:
 
 	//different types struct of constantbuffer
 	std::unordered_map<std::string, ConstantBuffer> constantBuffers;
+
+	std::map<std::string, int> textureBindPoints;
 
 	static std::string readfile(std::string filename)
 	{
@@ -85,9 +89,28 @@ public:
 			buffer.cbSizeInBytes = ConstantBuffer_totalSize;
 			buffer.init(core, 1024);
 			constantBuffers.insert(std::pair<std::string, ConstantBuffer>(buffer.name, buffer));
+
+		}
+
+		for (int i = 0; i < desc.BoundResources; i++)
+		{
+			D3D12_SHADER_INPUT_BIND_DESC bindDesc;
+			reflection->GetResourceBindingDesc(i, &bindDesc);
+			if (bindDesc.Type == D3D_SIT_TEXTURE)
+			{
+				textureBindPoints.insert({ bindDesc.Name, bindDesc.BindPoint });
+			}
 		}
 		return totalSize;
 	}
+
+	void updateTexturePS(Core* core, std::string name, int heapOffset) {
+		UINT bindPoint = textureBindPoints[name];
+		D3D12_GPU_DESCRIPTOR_HANDLE handle = core->srvHeap.gpuHandle;
+		handle.ptr = handle.ptr + (UINT64)(heapOffset - bindPoint) * (UINT64)core->srvHeap.incrementSize;
+		core->getCommandList()->SetGraphicsRootDescriptorTable(2, handle);
+	}
+
 };
 
 class Shader_Manager
@@ -132,6 +155,11 @@ public:
 				shaders[shader_name].constantBuffers[cb_name].update(var_name, data);
 			}
 		}
+	}
+
+	void updateTexturePS(Core* core, std::string shader_name, std::string t_bindpoint, Texture* index)
+	{
+		shaders[shader_name].updateTexturePS(core, t_bindpoint, index->heapOffset);
 	}
 
 	Shader* find(std::string name)
