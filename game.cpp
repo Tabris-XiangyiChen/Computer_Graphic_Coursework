@@ -31,9 +31,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	tree.init(&core, &sm, &psos, "Resource/Tree/acacia_003.gem");
 
 	Object_Animation trex;
-	trex.init(&core, &sm, &psos, "Resource/Trex/Trex.gem");
+	trex.init(&core, &sm, &psos, "Trex");
+	Object_Animation AutomaticCarbine;
+	AutomaticCarbine.init(&core, &sm, &psos, "AutomaticCarbine");
 	AnimationInstance animatedInstance;
 	animatedInstance.init(&trex.animation, 0);
+	AnimationInstance animatedInstance2;
+	animatedInstance2.init(&AutomaticCarbine.animation, 0);
 
 	while (1) {
 		float dt = timer.dt();
@@ -65,8 +69,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		{
 			animatedInstance.resetAnimationTime();
 		}
+		animatedInstance2.update("00 pose", dt);
+		if (animatedInstance2.animationFinished() == true)
+		{
+			animatedInstance2.resetAnimationTime();
+		}
 		trex.update(world, vp, &animatedInstance);
 		trex.draw(&core);
+
+		Matrix m;
+		AutomaticCarbine.update(m, vp, &animatedInstance2);
+		AutomaticCarbine.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{

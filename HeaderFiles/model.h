@@ -172,7 +172,9 @@ public:
 		GEMLoader::GEMModelLoader loader;
 		std::vector<GEMLoader::GEMMesh> gemmeshes;
 		GEMLoader::GEMAnimation gemanimation;
-		loader.load(filename, gemmeshes, gemanimation);
+		std::string root = "Resource/" + filename + "/";
+		std::string gem_root = root + filename + ".gem";
+		loader.load(gem_root, gemmeshes, gemanimation);
 		for (int i = 0; i < gemmeshes.size(); i++) {
 			Mesh* mesh = new Mesh();
 			std::vector<ANIMATED_VERTEX> vertices;
@@ -182,9 +184,10 @@ public:
 				vertices.push_back(v);
 			}
 
-			textureFilenames.push_back(gemmeshes[i].material.find("albedo").getValue());
+			std::string tex_root = root + gemmeshes[i].material.find("albedo").getValue();
+			textureFilenames.push_back(tex_root);
 			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-			textures.load(core, gemmeshes[i].material.find("albedo").getValue());
+			textures.load(core, tex_root);
 
 			mesh->init_animation(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
