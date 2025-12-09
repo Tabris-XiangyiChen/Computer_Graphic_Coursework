@@ -5,76 +5,6 @@
 class Camera
 {
 public:
-	Vec3 from;
-	Vec3 to;
-	Vec3 up;
-	Matrix lookat;
-	Matrix perspective;
-	Matrix vp;
-	float fov;
-	float near_view;
-	float far_view;
-	float aspect;
-
-
-	Camera()
-	{
-		from = Vec3(0.f, 0.f, 0.f);
-		to = Vec3(0.f, 1.f, 0.f);
-		up = Vec3(0.f, 0.f, 1.f);
-		fov = M_PI / 3;
-		near_view = 0.1f;
-		far_view = 10.f;
-	}
-
-	Camera(Vec3 _from, Vec3 _to, Vec3 _up, float _fov = 60, float _near = 0.1f, float _far = 80.f)
-	{
-		from = _from;
-		to = _to;
-		up = _up;
-		fov = _fov;
-		near_view = _near;
-		far_view = _far;
-	}
-
-	void init(float _aspect)
-	{
-		aspect = _aspect;
-		lookat = Matrix::lookAt(from, to, up);
-		perspective = Matrix::perspective(fov, aspect, near_view, far_view);
-		vp = perspective.mul(lookat);
-	}
-
-	void update(Window* window, float dt)
-	{
-		//from = Vec3(11 * cos(dt), 5, 11 * sinf(dt));
-		float speed = 5.0f;  // 每秒移动速度
-
-		Vec3 forward = (to - from).Normalize();
-		Vec3 right = forward.Cross(up).Normalize();
-
-		if (window->keys['W'])
-			from = from + forward * speed * dt;
-
-		if (window->keys['S'])
-			from = from - forward * speed * dt;
-
-		if (window->keys['A'])
-			from = from - right * speed * dt;
-
-		if (window->keys['D'])
-			from = from + right * speed * dt;
-
-		// 更新矩阵
-		lookat = Matrix::lookAt(from, to, up);
-		perspective = Matrix::perspective(fov, aspect, near_view, far_view);
-		vp = perspective.mul(lookat);
-	}
-};
-
-class Camera_
-{
-public:
     Vec3 position;
     Vec3 target; 
     Vec3 up;
@@ -97,16 +27,16 @@ public:
 
 public:
 
-    Camera_() :
-        position(10, 5, 10),
-        target(0, 1, 0),
-        up(0, 0, 1),
-        forward(0, 0, -1),
+    Camera() :
+        position(Vec3(0, 0, 0)),
+        target(Vec3(0, 0, 1)),
+        up(Vec3(0, 1, 0)),
+        forward(Vec3(0, 0, 1)),
         fov(60.0f),
         aspect(16.0f / 9.0f),
         near_plane(0.01f),
-        far_plane(100.0f),
-        speed(0.01f),
+        far_plane(800.0f),
+        speed(20.f),
         mouse_sensitivity(0.1f),
         yaw(0.0f),
         pitch(0.0f)
@@ -147,28 +77,67 @@ public:
         update_matrices();
     }
 
-
     void update(Window* window, float dt)
     {
+        update_vectors();
 
+        update_matrices();
+    }
+
+    void update_free(Window* window, float dt)
+    {
         ProcessKeyboard(window, dt);
 
-        ProcessMouse_notcenter(window);
+        //ProcessMouse(window);
+
+        update_vectors();
 
         update_matrices();
     }
 
 
-    void SetPerspective(float _fov, float _aspect, float _near, float _far)
+    // update matrices
+    void update_matrices()
     {
-        fov = _fov;
-        aspect = _aspect;
-        near_plane = _near;
-        far_plane = _far;
+        view = Matrix::lookAt(position, target, up);
         projection = Matrix::perspective(fov, aspect, near_plane, far_plane);
-        view_projection = projection * view;
+        view_projection = projection.mul(view);
+
+    }
+    void update_vectors()
+    {
+        Vec3 newForward;
+        newForward.x = cos(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
+        newForward.y = sin(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
+        newForward.z = sin(pitch * M_PI / 180.0f);
+
+        forward = newForward.Normalize();
+
+        Vec3 world_up = Vec3(0, 1, 0);
+        right = forward.Cross(world_up).Normalize();
+        up = right.Cross(forward).Normalize();
+
+        target = position + forward;
     }
 
+    // 获取相机在地面平面上的方向（忽略垂直分量）
+    Vec3 get_forward_flat() const
+    {
+        Vec3 flat_forward = forward;
+        flat_forward.y = 0;  // 如果Y是垂直轴，忽略Y分量
+        if (flat_forward.length() > 0.001f)
+            return flat_forward.Normalize();
+        return Vec3(0, 0, 1);  // 默认前向
+    }
+
+    Vec3 get_right_flat() const
+    {
+        Vec3 flat_right = right;
+        flat_right.y = 0;  // 如果Y是垂直轴，忽略Y分量
+        if (flat_right.length() > 0.001f)
+            return flat_right.Normalize();
+        return Vec3(1, 0, 0);  // 默认右向
+    }
 private:
 
     void ProcessKeyboard(Window* window, float dt)
@@ -225,7 +194,7 @@ private:
         // move the mouse to screen centre
         last_x = window->mousex;
         last_y = window->mousey;
-        window->SetCursorPos(centerX, centerY);
+        //window->SetCursorPos(centerX, centerY);
     }
 
     void ProcessMouse_notcenter(Window* window)
@@ -269,26 +238,107 @@ private:
         last_y = window->mousey;
     }
 
-    void update_vectors()
+};
+
+class ThirdPersonCameraController
+{
+public:
+    Camera* camera;
+    Vec3* target_pos;    // charactor positino
+
+    float distance = 200.0f;       // distance to the charactor
+    float min_distance = 10.0f;
+    float max_distance = 50.0f;
+
+    float yaw = 0.0f;
+    float pitch = 20.0f;
+
+    Vec3 target_offset = Vec3(0, 100.0f, 0);
+
+    float mouse_sensitivity = 0.1f;
+    bool enable_rotation = true;
+public:
+    void init(Camera* cam, Vec3* target)
     {
-        Vec3 newForward;
-        newForward.x = cos(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
-        newForward.y = sin(yaw * M_PI / 180.0f) * cos(pitch * M_PI / 180.0f);
-        newForward.z = sin(pitch * M_PI / 180.0f);
+        camera = cam;
+        target_pos = target;
 
-        forward = newForward.Normalize();
-
-        right = forward.Cross(Vec3(0, 0, 1)).Normalize();
-        up = right.Cross(forward).Normalize();
-
-        target = position + forward;
+        //yaw = camera->yaw;
+        //pitch = camera->pitch;
+        update_camera_transform();
     }
 
-    // update matrices
-    void update_matrices()
+    void update(Window* window, float dt)
     {
-        view = Matrix::lookAt(position, target, up);
-        projection = Matrix::perspective(fov, aspect, near_plane, far_plane);
-        view_projection = projection.mul(view);
+        if (enable_rotation)
+        {
+            update_mouse(window);
+        }
+        //update_zoom(window);
+        update_camera_transform();
+    }
+
+    void set_enable_rotation(bool enable)
+    {
+        enable_rotation = enable;
+    }
+
+private:
+    void update_mouse(Window* window)
+    {
+        // 鼠标右键控制相机旋转
+        if (window->mouseButtons[0])  // 右键按下
+        {
+            float dx = window->mousex - window->last_mousex;
+            float dy = window->mousey - window->last_mousey;
+
+            dx *= mouse_sensitivity;
+            dy *= mouse_sensitivity;
+
+            yaw -= dx;      // 水平旋转
+            pitch += dy;    // 垂直旋转
+
+            pitch = clamp(pitch, -60.0f, 80.0f);  // 限制角度
+        }
+    }
+
+    //void update_zoom(Window* window)
+    //{
+    //    distance -= window->mouse_scroll * 0.5f;
+    //    distance = clamp(distance, min_distance, max_distance);
+    //}
+
+    void update_camera_transform()
+    {
+        Vec3 orbit_target = *target_pos + target_offset;
+
+        float radYaw = yaw * M_PI / 180.0f;
+        float radPitch = pitch * M_PI / 180.0f;
+
+        // 球坐标 → 偏移
+        Vec3 offset;
+        offset.x = distance * cos(radPitch) * cos(radYaw);
+        offset.z = distance * cos(radPitch) * sin(radYaw);  // Z轴作为水平面
+        offset.y = distance * sin(radPitch);                // Y轴作为垂直轴
+
+        // 3. 设置相机位置
+        camera->position = orbit_target + offset;
+
+        // 4. 设置相机看向目标点
+        camera->target = orbit_target;
+
+        // 5. 重新计算相机方向向量
+        camera->forward = (camera->target - camera->position).Normalize();
+
+        Vec3 world_up = Vec3(0, 1, 0);  // Y轴向上
+        camera->right = camera->forward.Cross(world_up).Normalize();
+        camera->up = camera->right.Cross(camera->forward).Normalize();
+
+        // 6. 更新相机的yaw和pitch（保持同步）
+        camera->pitch = pitch;
+        camera->yaw = yaw;
+
+        // 7. 更新相机矩阵
+        camera->update_matrices();
     }
 };

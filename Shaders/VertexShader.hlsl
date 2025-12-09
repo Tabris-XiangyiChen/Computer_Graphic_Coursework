@@ -1,4 +1,4 @@
-cbuffer staticMeshBuffer : register(b0)
+cbuffer staticMeshBuffer
 {
     float4x4 W;
     float4x4 VP;

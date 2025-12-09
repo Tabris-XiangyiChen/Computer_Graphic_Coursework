@@ -187,7 +187,7 @@ public:
 		return min(x, min(y, z));
 	}
 
-	std::string operator<< (const Vec3& pVec)
+	std::string get_string() const
 	{
 		return "{" + std::to_string(v[0]) + ", " + std::to_string(v[1]) + ", " + std::to_string(v[2]) + "}";
 	}
@@ -577,7 +577,7 @@ public:
 			(v.x * m[8] + v.y * m[9] + v.z * m[10]) + m[11]);
 	}
 
-	Vec3 mulVec(const Vec3& v)
+	Vec3 mulVec  (const Vec3& v) const
 	{
 		return Vec3(
 			(v.x * m[0] + v.y * m[1] + v.z * m[2]),

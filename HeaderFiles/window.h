@@ -20,6 +20,8 @@ public:
 	bool keys[256];
 	int mousex;
 	int mousey;
+	int last_mousex;
+	int last_mousey;
 	bool mouseButtons[3];
 
 
@@ -29,6 +31,8 @@ public:
 
 	void updateMouse(int x, int y)
 	{
+		last_mousex = mousex;
+		last_mousey = mousey;
 		mousex = x;
 		mousey = y;
 	}
