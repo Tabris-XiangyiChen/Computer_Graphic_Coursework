@@ -134,7 +134,11 @@ public:
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
-	std::vector<std::string> textureFilenames;
+	std::string vs_name = "VS_Static";
+	std::string ps_name = "PS_OnlyALB";
+	std::string pso_name = "StaticModel_OnlyALB_PSO";
+
+	std::string textureFilename;
 	Texture_Manager* textures;
 
 	STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
@@ -167,41 +171,33 @@ public:
 		indices.push_back(3);
 		indices.push_back(2);
 		mesh.init(core, vertices, indices);
-		//shaders->load(core, "StaticModelUntextured", "VS.txt", "PSUntextured.txt");
-		shader_manager->load(core, "PixelShader", Shader_Type::PIXEL);
-		name = "StaticModelUntextured";
-		psos->createPSO(core, "StaticModelUntexturedPSO", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, VertexLayoutCache::getStaticLayout());
 
-		std::string tex_root = "Models/Textures/bark05_ALB.png";
-		textureFilenames.push_back(tex_root);
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		name = "StaticModelUntextured";
+		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
+
+		std::string tex_root_ALB = "Models/Textures/bark05_ALB.png";
+		textureFilename = tex_root_ALB;
 		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-		textures->load(core, tex_root);
+		textures->load_onlyALB(core, tex_root_ALB, tex_root_ALB);
 	}
-	//void draw(Core* core, PSOManager* psos, Shader_Manager* shader_manager, Matrix& vp)
-	//{
-	//	Matrix planeWorld;
-	//	shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
-	//	shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
-	//	apply(core);
-	//	psos->bind(core, "StaticModelUntexturedPSO");
-	//	mesh.draw(core);
-	//}
 
 	void update(Matrix planeWorld, Matrix vp) {
-		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
-		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+		shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+		shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
 	}
 
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
-		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
+		for (auto& vs : shader_manager->shaders[vs_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
 			vs.second.next();
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
+		for (auto& ps : shader_manager->shaders[ps_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
@@ -212,9 +208,10 @@ public:
 		update(planeWorld, vp);
 		core->beginRenderPass();
 		apply(core);
-		psos->bind(core, "StaticModelUntexturedPSO");
+		psos->bind(core, pso_name);
 
-		shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[0]));
+		//shader_manager->updateTexturePS(core, ps_name, "tex", textures->find(textureFilenames[0]));
+		textures->updateTexturePS(core, textureFilename);
 		mesh.draw(core);
 		
 	}
@@ -228,7 +225,11 @@ public:
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
-	std::vector<std::string> textureFilenames;
+	std::string vs_name = "VS_Static";
+	std::string ps_name = "PS_OnlyALB";
+	std::string pso_name = "StaticModel_OnlyALB_PSO";
+
+	std::string textureFilename;
 	Texture_Manager* textures;
 
 	int rings= 500; 
@@ -284,10 +285,10 @@ public:
 		}
 		mesh.init(core, vertices, indices);
 
-		std::string tex_root = "Models/Textures/farmland_2k.png";
-		textureFilenames.push_back(tex_root);
+		std::string tex_root_ALB = "Models/Textures/farmland_2k.png";
+		textureFilename = tex_root_ALB;
 		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-		textures->load(core, tex_root);
+		textures->load_onlyALB(core, tex_root_ALB, tex_root_ALB);
 	}
 	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures)
 	{
@@ -295,25 +296,26 @@ public:
 		psos = _psos;
 		textures = _textures;
 		init_mesh(core);
-		shader_manager->load(core, "PixelShader", Shader_Type::PIXEL);
-		psos->createPSO(core, "StaticModelUntexturedPSO", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, VertexLayoutCache::getStaticLayout());
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
-		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
-		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+		shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+		shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
 	}
 
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
-		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
+		for (auto& vs : shader_manager->shaders[vs_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
 			vs.second.next();
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
+		for (auto& ps : shader_manager->shaders[ps_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
@@ -324,9 +326,10 @@ public:
 		update(planeWorld, vp);
 		core->beginRenderPass();
 		apply(core);
-		psos->bind(core, "StaticModelUntexturedPSO");
+		psos->bind(core, pso_name);
 
-		shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[0]));
+		//shader_manager->updateTexturePS(core, ps_name, "tex", textures->find(textureFilenames[0]));
+		textures->updateTexturePS(core, textureFilename);
 		mesh.draw(core);
 
 	}
@@ -404,11 +407,50 @@ public:
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
+	std::string vs_name = "VS_Static";
+	std::string ps_name = "PS_Trans";
+	std::string pso_name = "StaticModel_Trans_PSO";
+
+	//std::vector<std::vector<std::string>> textureFilenames;
 	std::vector<std::string> textureFilenames;
+	//std::vector<std::string> textureFilenames2;
 	Texture_Manager* textures;
+	//Texture_Manager2* textures2;
 
 	AABB hitbox;
 
+	//void init_meshes(Core* core, std::string filename)
+	//{
+	//	GEMLoader::GEMModelLoader loader;
+	//	std::vector<GEMLoader::GEMMesh> gemmeshes;
+	//	GEMLoader::GEMAnimation gemanimation;
+	//	std::string root = "Models/" + filename + ".gem";
+	//	//std::string gem_root = root + filename + ".gem";
+	//	loader.load(root, gemmeshes, gemanimation);
+	//	for (int i = 0; i < gemmeshes.size(); i++) {
+	//		Mesh* mesh = new Mesh();
+	//		std::vector<STATIC_VERTEX> vertices;
+	//		for (int j = 0; j < gemmeshes[i].verticesStatic.size(); j++) {
+	//			STATIC_VERTEX v;
+	//			memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
+	//			vertices.push_back(v);
+	//			hitbox.expand(v.pos);
+	//		}
+
+	//		std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
+	//		std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
+	//		std::string tex_root_nh = gemmeshes[i].material.find("nh").getValue();
+	//		std::string tex_root_rmax = gemmeshes[i].material.find("rmax").getValue();
+	//		//textureFilenames[i].push_back(tex_root_alb);
+	//		textureFilenames.push_back(tex_root);
+	//		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
+	//		textures->load(core, tex_root);
+
+	//		mesh->init(core, vertices, gemmeshes[i].indices);
+	//		meshes.push_back(mesh);
+	//	}
+	//	hitbox.update_cache();
+	//}
 	void init_meshes(Core* core, std::string filename)
 	{
 		GEMLoader::GEMModelLoader loader;
@@ -427,42 +469,54 @@ public:
 				hitbox.expand(v.pos);
 			}
 
-			std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
-			textureFilenames.push_back(tex_root);
-			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-			textures->load(core, tex_root);
+			//get all three textures file roots,
+			std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
+			std::string tex_root_nh = gemmeshes[i].material.find("nh").getValue();
+			std::string tex_root_rmax = gemmeshes[i].material.find("rmax").getValue();
+			//textureFilenames[i].push_back(tex_root_alb);
+
+			//use the albedo texture name as the matarial name
+			textureFilenames.push_back(tex_root_alb);
+			std::vector<std::string> filenames;
+			filenames.push_back(tex_root_alb);
+			filenames.push_back(tex_root_nh);
+			filenames.push_back(tex_root_rmax);
+			// load 3 textures in the same matrial.
+			textures->load(core, tex_root_alb, filenames);
 
 			mesh->init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
 		hitbox.update_cache();
 	}
+
 	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
 	{
 		shader_manager = _shader_manager;
 		psos = _psos;
-		textures = _textures,
+		textures = _textures;
 		name = filename;
 		init_meshes(core, filename);
-		shader_manager->load(core, "PixelShaderWithTransparence", Shader_Type::PIXEL);
-		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShaderWithTransparence"].shader, VertexLayoutCache::getStaticLayout());
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
-		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
-		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+		shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+		shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
 	}
 
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
-		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
+		for (auto& vs : shader_manager->shaders[vs_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
 			vs.second.next();
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShaderWithTransparence"].constantBuffers)
+		for (auto& ps : shader_manager->shaders[ps_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
@@ -473,10 +527,11 @@ public:
 	void draw(Core* core) {
 		core->beginRenderPass();
 		apply(core);
-		psos->bind(core, "Object");
+		psos->bind(core, pso_name);
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			shader_manager->updateTexturePS(core, "PixelShaderWithTransparence", "tex", textures->find(textureFilenames[i]));
+			//shader_manager->updateTexturePS(core, "PixelShaderWithTransparence", "tex", textures->find(textureFilenames[i]));
+			textures->updateTexturePS(core, textureFilenames[i]);
 			meshes[i]->draw(core);
 		}
 	}
@@ -492,6 +547,10 @@ public:
 
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
+
+	std::string vs_name = "VS_Ani";
+	std::string ps_name = "PS";
+	std::string pso_name = "AnimationModel_PSO";
 
 	std::vector<std::string> textureFilenames;
 	Texture_Manager* textures;
@@ -516,10 +575,18 @@ public:
 				hitbox.expand(v.pos);
 			}
 
-			std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
-			textureFilenames.push_back(tex_root);
-			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-			textures->load(core, tex_root);
+			std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
+			std::string tex_root_nh = gemmeshes[i].material.find("nh").getValue();
+			std::string tex_root_rmax = gemmeshes[i].material.find("rmax").getValue();
+			//textureFilenames[i].push_back(tex_root_alb);
+
+			//use the albedo texture name as the matarial name
+			textureFilenames.push_back(tex_root_alb);
+			std::vector<std::string> filenames;
+			filenames.push_back(tex_root_alb);
+			filenames.push_back(tex_root_nh);
+			filenames.push_back(tex_root_rmax);
+			textures->load(core, tex_root_alb, filenames);
 
 			mesh->init_animation(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
@@ -571,15 +638,16 @@ public:
 		textures = _textures;
 		name = filename;
 		init_meshes(core, filename);
-		shader_manager->load(core, "AnimationShader", Shader_Type::VERTEX);
-		psos->createPSO(core, "AnimationModelPSO", shader_manager->find("AnimationShader")->shader, shader_manager->find("PixelShader")->shader, VertexLayoutCache::getAnimatedLayout());
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		psos->createPSO(core, pso_name, shader_manager->find(vs_name)->shader, shader_manager->find(ps_name)->shader, VertexLayoutCache::getAnimatedLayout());
 		
 		
 	}
 
 	void updateWorld( Matrix& w)
 	{
-		shader_manager->update("AnimationShader", "animatedMeshBuffer", "W", &w);
+		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &w);
 	}
 
 	void update_animation_instance(AnimationInstance* ani_in, float dt, std::string move)
@@ -592,23 +660,23 @@ public:
 	}
 	void update(Matrix& planeWorld, Matrix& vp, float dt, std::string move) {
 		update_animation_instance(&animation_instance, dt, move);
-		shader_manager->update("AnimationShader", "animatedMeshBuffer", "W", &planeWorld);
-		shader_manager->update("AnimationShader", "animatedMeshBuffer", "VP", &vp);
-		shader_manager->update("AnimationShader", "animatedMeshBuffer", "bones", animation_instance.matrices);
+		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &planeWorld);
+		shader_manager->update(vs_name, "animatedMeshBuffer", "VP", &vp);
+		shader_manager->update(vs_name, "animatedMeshBuffer", "bones", animation_instance.matrices);
 		//hitbox.
 	}
 
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
-		for (auto& vs : shader_manager->shaders["AnimationShader"].constantBuffers)
+		for (auto& vs : shader_manager->shaders[vs_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(0, vs.second.getGPUAddress());
 			vs.second.next();
 			//core->rootSignature.
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
+		for (auto& ps : shader_manager->shaders[ps_name].constantBuffers)
 		{
 			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
@@ -619,11 +687,12 @@ public:
 	void draw(Core* core) {
 		core->beginRenderPass();
 		apply(core);
-		psos->bind(core, "AnimationModelPSO");
+		psos->bind(core, pso_name);
 
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[i]));
+			//shader_manager->updateTexturePS(core, ps_name, "tex", textures->find(textureFilenames[i]));
+			textures->updateTexturePS(core, textureFilenames[i]);
 			meshes[i]->draw(core);
 		}
 

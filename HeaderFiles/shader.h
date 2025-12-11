@@ -49,7 +49,7 @@ public:
 			break;
 		case Shader_Type::PIXEL :
 			hr = D3DCompile(shader_str.c_str(), strlen(shader_str.c_str()), NULL, NULL,
-				NULL, "PS", "ps_5_0", 0, 0, &shader, &status);
+				NULL, "PS", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &shader, &status);
 			if (FAILED(hr))
 			{
 				(char*)status->GetBufferPointer();
@@ -158,9 +158,9 @@ public:
 		}
 	}
 
-	void updateTexturePS(Core* core, std::string shader_name, std::string t_bindpoint, Texture* index)
+	void updateTexturePS(Core* core, std::string shader_name, std::string t_bindpoint, Texture* texture)
 	{
-		shaders[shader_name].updateTexturePS(core, t_bindpoint, index->heapOffset);
+		shaders[shader_name].updateTexturePS(core, t_bindpoint, texture->heapOffset);
 	}
 
 	Shader* find(std::string name)

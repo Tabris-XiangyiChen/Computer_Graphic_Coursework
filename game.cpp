@@ -34,17 +34,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Texture_Manager tm;
 
 	Object tree;
-	tree.init(&core, &sm, &psos,&tm, "acacia");
+	tree.init(&core, &sm, &psos, &tm, "acacia");
 
 	Object_Animation trex;
 	trex.init(&core, &sm, &psos, &tm, "Trex");
-	Object_Animation fam;
-	fam.init(&core, &sm, &psos, &tm,"Farmer-male");
+	//Object_Animation fam;
+	//fam.init(&core, &sm, &psos, &tm,"Farmer-male");
 
 	Plane plane;
 	plane.init(&core, &psos, &sm, &tm);
 	Sphere sphere;
 	sphere.init(&core, &psos, &sm, &tm);
+	 
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
 	Camera camera_;

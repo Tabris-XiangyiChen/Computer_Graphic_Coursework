@@ -2,6 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "core.h"
+#include <vector>
 
 class Texture
 {
@@ -79,7 +80,91 @@ public:
 
 };
 
+class Material
+{
+public:
+	std::string name;
+	Texture albedo;
+	Texture normalmapping;
+	Texture rmax;
+
+	unsigned int heapoffset;
+
+	void load(Core* core,std::string _name, std::vector<std::string> filenames)
+	{
+		if (filenames.size() == 3)
+		{
+			name = _name;
+			albedo.load(core, filenames[0]);
+			normalmapping.load(core, filenames[1]);
+			rmax.load(core, filenames[2]);
+			heapoffset = albedo.heapOffset;
+		}
+	}
+	void load_onlyALB(Core* core,std::string _name,std::string filenames)
+	{
+
+			name = _name;
+			albedo.load(core, filenames);
+			heapoffset = albedo.heapOffset;
+	}
+
+	//get the material first texture's gpu ptr
+	D3D12_GPU_DESCRIPTOR_HANDLE get_GPU_handle(Core* core)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE handle = core->srvHeap.gpuHandle;
+		handle.ptr = handle.ptr + (UINT64)(heapoffset) * (UINT64)core->srvHeap.incrementSize;
+		return handle;
+	}
+};
+
 class Texture_Manager
+{
+public:
+	std::map<std::string, Material* > materials;
+	void load(Core* core, std::string name, std::vector<std::string> filenames)
+	{
+		if (materials.find(name) != materials.end())
+			return;
+
+		Material* material = new Material;
+		material->load(core, name, filenames);
+		materials.insert({ name, material });
+	}
+
+	void load_onlyALB(Core* core, std::string name,std::string filenames)
+	{
+		if (materials.find(name) != materials.end())
+			return;
+
+		Material* material = new Material;
+		material->load_onlyALB(core, name, filenames);
+		materials.insert({ name, material });
+	}
+
+	bool find(std::string name)
+	{
+		if (materials.find(name) != materials.end())
+			return true;
+		else
+		{
+			std::cout << "Didnt find material, name:" << name << std::endl;
+			return false;
+		}
+	}
+	D3D12_GPU_DESCRIPTOR_HANDLE get_material_GPU_handle(Core* core, std::string name)
+	{
+		if (find(name));
+		return materials[name]->get_GPU_handle(core);
+	}
+	
+	void updateTexturePS(Core* core, std::string material)
+	{
+		core->getCommandList()->SetGraphicsRootDescriptorTable(2, get_material_GPU_handle(core, material));
+	}
+};
+
+class Texture_Manager1
 {
 public:
 	std::map<std::string, Texture* > textures;

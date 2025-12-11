@@ -318,7 +318,7 @@ public:
 		//descriptor
 		D3D12_DESCRIPTOR_RANGE srvRange = {};
 		srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		srvRange.NumDescriptors = 8; // number of SRVs (t0–t7)
+		srvRange.NumDescriptors = 2; // number of SRVs (t0–t7)
 		srvRange.BaseShaderRegister = 0; // starting at t0
 		srvRange.RegisterSpace = 0;
 		srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
