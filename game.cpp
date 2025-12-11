@@ -31,17 +31,20 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Shader_Manager sm;
 	sm.init(&core);
 	PSOManager psos;
+	Texture_Manager tm;
 
 	Object tree;
-	tree.init(&core, &sm, &psos, "acacia");
+	tree.init(&core, &sm, &psos,&tm, "acacia");
 
 	Object_Animation trex;
-	trex.init(&core, &sm, &psos, "Trex");
+	trex.init(&core, &sm, &psos, &tm, "Trex");
 	Object_Animation fam;
-	fam.init(&core, &sm, &psos, "Farmer-male");
+	fam.init(&core, &sm, &psos, &tm,"Farmer-male");
 
 	Plane plane;
-	plane.init(&core, &psos, &sm);
+	plane.init(&core, &psos, &sm, &tm);
+	Sphere sphere;
+	sphere.init(&core, &psos, &sm, &tm);
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
 	Camera camera_;
@@ -53,13 +56,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//free.init_pos(Vec3(0, 0, -100), Vec3(0, 0, 1), Vec3(0, 1, 0));
 
 	Main_Charactor farmer;
-	farmer.init(&core, &sm, &psos, &camera_);
+	farmer.init(&core, &sm, &psos, &tm, &camera_);
 
 	float time = 0;
 	//std::cout << "out" << std::endl;
 	while (1) {
 		float dt = timer.dt();
-		//plane.draw(&core, &psos, &sm, camera_.view_projection);
 
 		Matrix world;
 		//world = Matrix::Scaling(Vec3(0.01f, 0.01f, 0.01f));
@@ -78,6 +80,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		core.beginFrame();
 		win.processMessages();
+
+		plane.draw(&core, world, camera_.view_projection);
+		sphere.draw(&core, world, camera_.view_projection);
 
 		tree.update(world, camera_.view_projection);
 		tree.draw(&core);

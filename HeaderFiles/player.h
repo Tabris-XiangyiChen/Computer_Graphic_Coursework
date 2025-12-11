@@ -1,6 +1,81 @@
 ﻿#pragma once
 #include "model.h"
 #include "camera.h"
+#include <string>
+
+enum class Charactor_State
+{
+	ATTACK_A = 0,
+	ATTACK_B,
+	DEATH,
+	FALL_LOOP,
+	GRAB_LOW,
+	GRAB_MEDIUM,
+	HIT_REACTION,
+	IDLE_BASIC_01,
+	IDLE_BASIC_02,
+	IDLE_COMBAT,
+	IDLE_SIT_CHAIR,
+	IDLE_WHELL_BARROW,
+	JUMP,
+	LAND,
+	RUN,
+	WALK_CARRY,
+	WALK_INPLACE,
+	WALK_WHELLBARROW,
+	WALK,
+	WAVING_L_HAND,
+	WAVING_R_HAND,
+
+	MAX_TYPE
+};
+
+class Charactor_State_Helper
+{
+public:
+	const std::array<std::string, static_cast<size_t>(Charactor_State::MAX_TYPE)> state_names = {
+		"attack a",           // ATTACK_A
+		"attack b",           // ATTACK_B
+		"death",              // DEATH
+		"fall loop",          // FALL_LOOP
+		"grab low",           // GRAB_LOW
+		"grab medium",        // GRAB_MEDIUM
+		"hit reaction",       // HIT_REACTION
+		"idle basic 01",      // IDLE_BASIC_01
+		"idle basic 02",      // IDLE_BASIC_02
+		"idle combat",        // IDLE_COMBAT
+		"idle sit chair",     // IDLE_SIT_CHAIR
+		"idle whell barrow",  // IDLE_WHELL_BARROW
+		"jump",               // JUMP
+		"land",               // LAND
+		"run",                // RUN
+		"walk carry",         // WALK_CARRY
+		"walk inplace",       // WALK_INPLACE
+		"walk whellbarrow",   // WALK_WHELLBARROW
+		"walk",               // WALK
+		"waving l hand",      // WAVING_L_HAND
+		"waving r hand",      // WAVING_R_HAND
+	};
+
+	// 转换为字符串
+	inline std::string to_string(Charactor_State state) {
+		size_t index = static_cast<size_t>(state);
+		if (index < state_names.size()) {
+			return state_names[index];
+		}
+		return "idle basic 01";  // 默认值
+	}
+
+	// 从字符串转换（需要线性搜索，但使用频率低）
+	inline Charactor_State from_string(const std::string & name) {
+		for (size_t i = 0; i < state_names.size(); ++i) {
+			if (state_names[i] == name) {
+				return static_cast<Charactor_State>(i);
+			}
+		}
+		return Charactor_State::IDLE_BASIC_01;  // 默认状态
+	}
+};
 
 class Main_Charactor
 {
@@ -24,9 +99,9 @@ public:
 	bool is_moving = false;
 	float current_animation_speed = 1.0f;
 
-	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos, Camera* cam)
+	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos,Texture_Manager* textures, Camera* cam)
 	{
-		farmer.init(core, shader_manager, psos, name);
+		farmer.init(core, shader_manager, psos, textures, name);
 		//std::cout << farmer.hitbox.getMax().get_string() << farmer.hitbox.getMin().get_string() << std::endl;
 		
 		// 调试信息

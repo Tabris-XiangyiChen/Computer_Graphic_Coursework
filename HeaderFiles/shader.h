@@ -123,6 +123,7 @@ public:
 	{
 		load(core, "VertexShader", Shader_Type::VERTEX);
 		load(core, "PixelShader", Shader_Type::PIXEL);
+		//load(core, "PixelShaderWithTransparence", Shader_Type::PIXEL);
 	}
 
 	void load(Core* core, std::string shader_name, Shader_Type type)
@@ -134,13 +135,13 @@ public:
 			std::string fileName = folder_path + shader_name + ".cso";
 			std::wstring wideName = std::wstring(fileName.begin(), fileName.end());
 			std::ifstream compiledFile(fileName);
-			if (compiledFile.is_open()) {//check if there is compiled shader code
-				D3DReadFileToBlob(wideName.c_str(), &shader.shader);
-			}
-			else {//if not, generate a .cso file
+			//if (compiledFile.is_open()) {//check if there is compiled shader code
+			//	D3DReadFileToBlob(wideName.c_str(), &shader.shader);
+			//}
+			//else {//if not, generate a .cso file
 				shader.init(std::string(folder_path + shader_name + ".hlsl"), type, shader_name);
 				D3DWriteBlobToFile(shader.shader, wideName.c_str(), false);
-			}
+			//}
 			shader.reflect(core);
 			shaders.insert(std::pair<std::string, Shader>(shader_name, shader));
 		}

@@ -329,6 +329,13 @@ public:
 		rootParameterTex.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		parameters.push_back(rootParameterTex);
 
+		D3D12_ROOT_PARAMETER rootParameterCBVS2;
+		rootParameterCBVS2.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameterCBVS2.Descriptor.ShaderRegister = 1; // Register(b1)
+		rootParameterCBVS2.Descriptor.RegisterSpace = 0;
+		rootParameterCBVS2.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		parameters.push_back(rootParameterCBVS2);
+
 		D3D12_STATIC_SAMPLER_DESC staticSampler = {};
 		staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		staticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

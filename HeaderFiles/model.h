@@ -129,10 +129,14 @@ public:
 class Plane
 {
 public:
+	std::string name;
 	Mesh mesh;
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
-	std::string shaderName;
+
+	std::vector<std::string> textureFilenames;
+	Texture_Manager* textures;
+
 	STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 	{
 		STATIC_VERTEX v;
@@ -145,15 +149,16 @@ public:
 		v.tv = tv;
 		return v;
 	}
-	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager)
+	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures)
 	{
 		shader_manager = _shader_manager;
 		psos = _psos;
+		textures = _textures;
 		std::vector<STATIC_VERTEX> vertices;
 		vertices.push_back(addVertex(Vec3(-1000, 0, -1000), Vec3(0, 1000, 0), 0, 0));
 		vertices.push_back(addVertex(Vec3(1000, 0, -1000), Vec3(0, 1000, 0), 1, 0));
 		vertices.push_back(addVertex(Vec3(-1000, 0, 1000), Vec3(0, 1000, 0), 0, 1));
-		vertices.push_back(addVertex(Vec3(1000, 0, 1000), Vec3(0, 1000, 0), 1000, 1000));
+		vertices.push_back(addVertex(Vec3(1000, 0, 1000), Vec3(0, 1000, 0), 1, 1));
 		std::vector<unsigned int> indices;
 		indices.push_back(0);
 		indices.push_back(1);
@@ -163,36 +168,170 @@ public:
 		indices.push_back(2);
 		mesh.init(core, vertices, indices);
 		//shaders->load(core, "StaticModelUntextured", "VS.txt", "PSUntextured.txt");
-		shader_manager->load(core, "PixelShader1", Shader_Type::PIXEL);
-		shaderName = "StaticModelUntextured";
-		psos->createPSO(core, "StaticModelUntexturedPSO", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader1"].shader, VertexLayoutCache::getStaticLayout());
+		shader_manager->load(core, "PixelShader", Shader_Type::PIXEL);
+		name = "StaticModelUntextured";
+		psos->createPSO(core, "StaticModelUntexturedPSO", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, VertexLayoutCache::getStaticLayout());
+
+		std::string tex_root = "Models/Textures/bark05_ALB.png";
+		textureFilenames.push_back(tex_root);
+		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
+		textures->load(core, tex_root);
 	}
-	void draw(Core* core, PSOManager* psos, Shader_Manager* shader_manager, Matrix& vp)
-	{
-		Matrix planeWorld;
+	//void draw(Core* core, PSOManager* psos, Shader_Manager* shader_manager, Matrix& vp)
+	//{
+	//	Matrix planeWorld;
+	//	shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
+	//	shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+	//	apply(core);
+	//	psos->bind(core, "StaticModelUntexturedPSO");
+	//	mesh.draw(core);
+	//}
+
+	void update(Matrix planeWorld, Matrix vp) {
 		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
 		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
-		apply(core);
-		psos->bind(core, "StaticModelUntexturedPSO");
-		mesh.draw(core);
 	}
+
 	void apply(Core* core)
 	{
 		unsigned int slot = 0;
 		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(0, vs.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
 			vs.second.next();
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShader1"].constantBuffers)
+		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, ps.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
 			slot++;
 		}
 	}
+	void draw(Core* core, Matrix planeWorld, Matrix vp) {
+		update(planeWorld, vp);
+		core->beginRenderPass();
+		apply(core);
+		psos->bind(core, "StaticModelUntexturedPSO");
+
+		shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[0]));
+		mesh.draw(core);
+		
+	}
 };
+
+class Sphere
+{
+public:
+	std::string name = "Sphere";
+	Mesh mesh;
+	Shader_Manager* shader_manager;
+	PSOManager* psos;
+
+	std::vector<std::string> textureFilenames;
+	Texture_Manager* textures;
+
+	int rings= 500; 
+	int segments = 500;
+	float radius = 2000.f;
+
+	STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
+	{
+		STATIC_VERTEX v;
+		v.pos = p;
+		v.normal = n;
+		Frame frame;
+		frame.fromVector(n);
+		v.tangent = frame.u;
+		v.tu = tu;
+		v.tv = tv;
+		return v;
+	}
+
+	void init_mesh(Core* core)
+	{
+		std::vector<STATIC_VERTEX> vertices;
+		for (int lat = 0; lat <= rings; lat++) {
+			float theta = lat * M_PI / rings;
+			float sinTheta = sinf(theta);
+			float cosTheta = cosf(theta);
+			for (int lon = 0; lon <= segments; lon++) {
+				float phi = lon * 2.0f * M_PI / segments;
+				float sinPhi = sinf(phi);
+				float cosPhi = cosf(phi);
+				Vec3 position(radius * sinTheta * cosPhi, radius * cosTheta,
+					radius * sinTheta * sinPhi);
+				Vec3 normal = position.Normalize();
+				float tu = 1.0f - (float)lon / segments;
+				float tv = 1.0f - (float)lat / rings;
+				vertices.push_back(addVertex(position, normal, tu, tv));
+			}
+		}
+		std::vector<unsigned int> indices;
+		for (int lat = 0; lat < rings; lat++)
+		{
+			for (int lon = 0; lon < segments; lon++)
+			{
+				int current = lat * (segments + 1) + lon;
+				int next = current + segments + 1;
+				indices.push_back(current);
+				indices.push_back(next);
+				indices.push_back(current + 1);
+				indices.push_back(current + 1);
+				indices.push_back(next);
+				indices.push_back(next + 1);
+			}
+		}
+		mesh.init(core, vertices, indices);
+
+		std::string tex_root = "Models/Textures/farmland_2k.png";
+		textureFilenames.push_back(tex_root);
+		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
+		textures->load(core, tex_root);
+	}
+	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures)
+	{
+		shader_manager = _shader_manager;
+		psos = _psos;
+		textures = _textures;
+		init_mesh(core);
+		shader_manager->load(core, "PixelShader", Shader_Type::PIXEL);
+		psos->createPSO(core, "StaticModelUntexturedPSO", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, VertexLayoutCache::getStaticLayout());
+	}
+
+	void update(Matrix planeWorld, Matrix vp) {
+		shader_manager->update("VertexShader", "staticMeshBuffer", "W", &planeWorld);
+		shader_manager->update("VertexShader", "staticMeshBuffer", "VP", &vp);
+	}
+
+	void apply(Core* core)
+	{
+		unsigned int slot = 0;
+		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
+		{
+			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
+			vs.second.next();
+			slot++;
+		}
+		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
+		{
+			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
+			ps.second.next();
+			slot++;
+		}
+	}
+	void draw(Core* core, Matrix planeWorld, Matrix vp) {
+		update(planeWorld, vp);
+		core->beginRenderPass();
+		apply(core);
+		psos->bind(core, "StaticModelUntexturedPSO");
+
+		shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[0]));
+		mesh.draw(core);
+
+	}
+};
+
 
 class Cube
 {
@@ -266,7 +405,7 @@ public:
 	PSOManager* psos;
 
 	std::vector<std::string> textureFilenames;
-	Texture_Manager textures;
+	Texture_Manager* textures;
 
 	AABB hitbox;
 
@@ -291,20 +430,22 @@ public:
 			std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
 			textureFilenames.push_back(tex_root);
 			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-			textures.load(core, tex_root);
+			textures->load(core, tex_root);
 
 			mesh->init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
 		hitbox.update_cache();
 	}
-	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, std::string filename)
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
 	{
 		shader_manager = _shader_manager;
 		psos = _psos;
+		textures = _textures,
 		name = filename;
 		init_meshes(core, filename);
-		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShader"].shader, VertexLayoutCache::getStaticLayout());
+		shader_manager->load(core, "PixelShaderWithTransparence", Shader_Type::PIXEL);
+		psos->createPSO(core, "Object", shader_manager->shaders["VertexShader"].shader, shader_manager->shaders["PixelShaderWithTransparence"].shader, VertexLayoutCache::getStaticLayout());
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
@@ -317,13 +458,13 @@ public:
 		unsigned int slot = 0;
 		for (auto& vs : shader_manager->shaders["VertexShader"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, vs.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
 			vs.second.next();
 			slot++;
 		}
-		for (auto& ps : shader_manager->shaders["PixelShader"].constantBuffers)
+		for (auto& ps : shader_manager->shaders["PixelShaderWithTransparence"].constantBuffers)
 		{
-			core->getCommandList()->SetGraphicsRootConstantBufferView(slot, ps.second.getGPUAddress());
+			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
 			ps.second.next();
 			slot++;
 		}
@@ -335,7 +476,7 @@ public:
 		psos->bind(core, "Object");
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			shader_manager->updateTexturePS(core, "PixelShader", "tex", textures.find(textureFilenames[i]));
+			shader_manager->updateTexturePS(core, "PixelShaderWithTransparence", "tex", textures->find(textureFilenames[i]));
 			meshes[i]->draw(core);
 		}
 	}
@@ -353,19 +494,12 @@ public:
 	PSOManager* psos;
 
 	std::vector<std::string> textureFilenames;
-	Texture_Manager textures;
+	Texture_Manager* textures;
 
 	AABB hitbox;
 
-	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, std::string filename)
+	void init_meshes(Core* core, std::string filename)
 	{
-		shader_manager = _shader_manager;
-		psos = _psos;
-		name = filename;
-
-		shader_manager->load(core, "AnimationShader", Shader_Type::VERTEX);
-		psos->createPSO(core, "AnimationModelPSO", shader_manager->find("AnimationShader")->shader, shader_manager->find("PixelShader")->shader, VertexLayoutCache::getAnimatedLayout());
-		
 		GEMLoader::GEMModelLoader loader;
 		std::vector<GEMLoader::GEMMesh> gemmeshes;
 		GEMLoader::GEMAnimation gemanimation;
@@ -385,7 +519,7 @@ public:
 			std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
 			textureFilenames.push_back(tex_root);
 			// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-			textures.load(core, tex_root);
+			textures->load(core, tex_root);
 
 			mesh->init_animation(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
@@ -429,6 +563,18 @@ public:
 		}
 
 		animation_instance.init(&animation, 0);
+	}
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
+	{
+		shader_manager = _shader_manager;
+		psos = _psos;
+		textures = _textures;
+		name = filename;
+		init_meshes(core, filename);
+		shader_manager->load(core, "AnimationShader", Shader_Type::VERTEX);
+		psos->createPSO(core, "AnimationModelPSO", shader_manager->find("AnimationShader")->shader, shader_manager->find("PixelShader")->shader, VertexLayoutCache::getAnimatedLayout());
+		
+		
 	}
 
 	void updateWorld( Matrix& w)
@@ -477,7 +623,7 @@ public:
 
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			shader_manager->updateTexturePS(core, "PixelShader", "tex", textures.find(textureFilenames[i]));
+			shader_manager->updateTexturePS(core, "PixelShader", "tex", textures->find(textureFilenames[i]));
 			meshes[i]->draw(core);
 		}
 
