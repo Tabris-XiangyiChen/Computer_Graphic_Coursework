@@ -55,8 +55,9 @@ public:
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		core->device->CreateCommittedResource(&heapDesc, D3D12_HEAP_FLAG_NONE, &textureDesc,
+		HRESULT hr = core->device->CreateCommittedResource(&heapDesc, D3D12_HEAP_FLAG_NONE, &textureDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST, NULL, IID_PPV_ARGS(&tex));
+		HRESULT hr2 = core->device->GetDeviceRemovedReason();
 
 		D3D12_RESOURCE_DESC desc = tex->GetDesc();
 		unsigned long long size;
@@ -67,6 +68,8 @@ public:
 		unsigned int alignedWidth = ((width * 4) + 255) & ~255;
 		core->uploadResource(tex, data, alignedWidth * height,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &footprint);
+
+		HRESULT hr3 = core->device->GetDeviceRemovedReason();
 
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = core->srvHeap.getNextCPUHandle();
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

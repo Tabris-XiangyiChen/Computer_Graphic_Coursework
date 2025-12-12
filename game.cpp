@@ -36,6 +36,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Object tree;
 	tree.init(&core, &sm, &psos, &tm, "acacia");
 
+	Object_Instance flower;
+	//Object flower;
+	flower.init(&core, &sm, &psos, &tm, "flower4");
+
 	Object_Animation trex;
 	trex.init(&core, &sm, &psos, &tm, "Trex");
 	//Object_Animation fam;
@@ -87,6 +91,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		tree.update(world, camera_.view_projection);
 		tree.draw(&core);
+
+		flower.update(world, camera_.view_projection);
+		flower.draw(&core);
 
 		trex.update(world, camera_.view_projection, dt, "attack");
 		trex.draw(&core);

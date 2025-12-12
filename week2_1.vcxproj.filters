@@ -33,6 +33,9 @@
     <FxCompile Include="Shaders\PS.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\VS_Static_Ins.hlsl">
+      <Filter>Source Files\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SourceFiles\core.cpp">

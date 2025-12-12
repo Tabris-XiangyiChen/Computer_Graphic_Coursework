@@ -419,38 +419,6 @@ public:
 
 	AABB hitbox;
 
-	//void init_meshes(Core* core, std::string filename)
-	//{
-	//	GEMLoader::GEMModelLoader loader;
-	//	std::vector<GEMLoader::GEMMesh> gemmeshes;
-	//	GEMLoader::GEMAnimation gemanimation;
-	//	std::string root = "Models/" + filename + ".gem";
-	//	//std::string gem_root = root + filename + ".gem";
-	//	loader.load(root, gemmeshes, gemanimation);
-	//	for (int i = 0; i < gemmeshes.size(); i++) {
-	//		Mesh* mesh = new Mesh();
-	//		std::vector<STATIC_VERTEX> vertices;
-	//		for (int j = 0; j < gemmeshes[i].verticesStatic.size(); j++) {
-	//			STATIC_VERTEX v;
-	//			memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
-	//			vertices.push_back(v);
-	//			hitbox.expand(v.pos);
-	//		}
-
-	//		std::string tex_root = gemmeshes[i].material.find("albedo").getValue();
-	//		std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
-	//		std::string tex_root_nh = gemmeshes[i].material.find("nh").getValue();
-	//		std::string tex_root_rmax = gemmeshes[i].material.find("rmax").getValue();
-	//		//textureFilenames[i].push_back(tex_root_alb);
-	//		textureFilenames.push_back(tex_root);
-	//		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-	//		textures->load(core, tex_root);
-
-	//		mesh->init(core, vertices, gemmeshes[i].indices);
-	//		meshes.push_back(mesh);
-	//	}
-	//	hitbox.update_cache();
-	//}
 	void init_meshes(Core* core, std::string filename)
 	{
 		GEMLoader::GEMModelLoader loader;
@@ -500,6 +468,127 @@ public:
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
+	}
+
+	void update(Matrix planeWorld, Matrix vp) {
+		shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+		shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
+	}
+
+	void apply(Core* core)
+	{
+		unsigned int slot = 0;
+		for (auto& vs : shader_manager->shaders[vs_name].constantBuffers)
+		{
+			core->getCommandList()->SetGraphicsRootConstantBufferView(3, vs.second.getGPUAddress());
+			vs.second.next();
+			slot++;
+		}
+		for (auto& ps : shader_manager->shaders[ps_name].constantBuffers)
+		{
+			core->getCommandList()->SetGraphicsRootConstantBufferView(1, ps.second.getGPUAddress());
+			ps.second.next();
+			slot++;
+		}
+	}
+
+	void draw(Core* core) {
+		core->beginRenderPass();
+		apply(core);
+		psos->bind(core, pso_name);
+		for (int i = 0; i < meshes.size(); i++)
+		{
+			//shader_manager->updateTexturePS(core, "PixelShaderWithTransparence", "tex", textures->find(textureFilenames[i]));
+			textures->updateTexturePS(core, textureFilenames[i]);
+			meshes[i]->draw(core);
+		}
+	}
+};
+
+class Object_Instance
+{
+public:
+	std::string name;
+	std::vector<Mesh_Istancing*> meshes;
+	Shader_Manager* shader_manager;
+	PSOManager* psos;
+
+	std::vector<INSTANCE> instances_matix;
+
+	std::string vs_name = "VS_Static_Ins";
+	std::string ps_name = "PS_Trans";
+	std::string pso_name = "StaticModel_Trans_Ins_PSO";
+
+	//std::vector<std::vector<std::string>> textureFilenames;
+	std::vector<std::string> textureFilenames;
+	//std::vector<std::string> textureFilenames2;
+	Texture_Manager* textures;
+	//Texture_Manager2* textures2;
+
+	AABB hitbox;
+
+	void create_matixes()
+	{
+		for (unsigned int i = 0; i < 5; i++)
+		{
+			INSTANCE matrix;
+			matrix.w = Matrix();
+			matrix.w.m[3] = i * 10;
+			instances_matix.push_back(matrix);
+		}
+	}
+
+	void init_meshes(Core* core, std::string filename)
+	{
+		create_matixes();
+		
+		GEMLoader::GEMModelLoader loader;
+		std::vector<GEMLoader::GEMMesh> gemmeshes;
+		GEMLoader::GEMAnimation gemanimation;
+		std::string root = "Models/" + filename + ".gem";
+		//std::string gem_root = root + filename + ".gem";
+		loader.load(root, gemmeshes, gemanimation);
+		for (int i = 0; i < gemmeshes.size(); i++) {
+			Mesh_Istancing* mesh = new Mesh_Istancing();
+			std::vector<STATIC_VERTEX> vertices;
+			for (int j = 0; j < gemmeshes[i].verticesStatic.size(); j++) {
+				STATIC_VERTEX v;
+				memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
+				vertices.push_back(v);
+				hitbox.expand(v.pos);
+			}
+
+			//get all three textures file roots,
+			std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
+			std::string tex_root_nh = gemmeshes[i].material.find("nh").getValue();
+			std::string tex_root_rmax = gemmeshes[i].material.find("rmax").getValue();
+			//textureFilenames[i].push_back(tex_root_alb);
+
+			//use the albedo texture name as the matarial name
+			textureFilenames.push_back(tex_root_alb);
+			std::vector<std::string> filenames;
+			filenames.push_back(tex_root_alb);
+			filenames.push_back(tex_root_nh);
+			filenames.push_back(tex_root_rmax);
+			// load 3 textures in the same matrial.
+			textures->load(core, tex_root_alb, filenames);
+			
+			mesh->init(core, vertices, gemmeshes[i].indices, instances_matix);
+			meshes.push_back(mesh);
+		}
+		hitbox.update_cache();
+	}
+
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
+	{
+		shader_manager = _shader_manager;
+		psos = _psos;
+		textures = _textures;
+		name = filename;
+		init_meshes(core, filename);
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStatictLayoutInstanced());
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
