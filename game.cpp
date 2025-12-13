@@ -48,7 +48,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Plane plane;
 	plane.init(&core, &psos, &sm, &tm);
 	Sphere sphere;
-	sphere.init(&core, &psos, &sm, &tm);
+	sphere.init(&core, &psos, &sm, &tm, "autumn_field_2k");
 	 
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));

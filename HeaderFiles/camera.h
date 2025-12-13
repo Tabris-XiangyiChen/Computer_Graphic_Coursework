@@ -256,7 +256,12 @@ public:
     Vec3 target_offset = Vec3(0, 100.0f, 0);
 
     float mouse_sensitivity = 0.1f;
-    bool enable_rotation = true;
+
+    bool mouse_free = false;
+    bool mouse_lock_initialized = false;
+
+    float last_mousex = 0.0f;
+    float last_mousey = 0.0f;
 public:
     void init(Camera* cam, Vec3* target)
     {
@@ -270,37 +275,106 @@ public:
 
     void update(Window* window, float dt)
     {
-        if (enable_rotation)
-        {
-            update_mouse(window);
-        }
+        update_mouse_mode(window);
+
+        update_mouse(window);
+        
         //update_zoom(window);
+
         update_camera_transform();
     }
 
-    void set_enable_rotation(bool enable)
-    {
-        enable_rotation = enable;
-    }
 
 private:
+
+    void update_mouse_mode(Window* window)
+    {
+        static bool key_1_last = false;
+
+        bool key_1_now = window->keys['1'];
+
+        if (key_1_now && !key_1_last)
+        {
+            mouse_free = !mouse_free;
+            mouse_lock_initialized = false; // 强制重新初始化
+        }
+
+        key_1_last = key_1_now;
+    }
+
     void update_mouse(Window* window)
     {
-        // 鼠标右键控制相机旋转
-        if (window->mouseButtons[0])  // 右键按下
+        if (mouse_free)
         {
-            float dx = window->mousex - window->last_mousex;
-            float dy = window->mousey - window->last_mousey;
-
-            dx *= mouse_sensitivity;
-            dy *= mouse_sensitivity;
-
-            yaw -= dx;      // 水平旋转
-            pitch += dy;    // 垂直旋转
-
-            pitch = clamp(pitch, -60.0f, 80.0f);  // 限制角度
+            ShowCursor(TRUE);
+            ClipCursor(NULL);        // 释放鼠标限制
+            mouse_lock_initialized = false;
+            return;
         }
+        float centerX = window->width * 0.5f;
+        float centerY = window->height * 0.5f;
+
+        ShowCursor(FALSE);
+        if (!mouse_lock_initialized)
+        {
+            RECT rect;
+            GetClientRect(window->hwnd, &rect);
+
+            POINT ul = { rect.left, rect.top };
+            POINT lr = { rect.right, rect.bottom };
+            ClientToScreen(window->hwnd, &ul);
+            ClientToScreen(window->hwnd, &lr);
+
+            RECT clip_rect = { ul.x, ul.y, lr.x, lr.y };
+            ClipCursor(&clip_rect);
+
+            POINT p{ (LONG)centerX, (LONG)centerY };
+            ClientToScreen(window->hwnd, &p);
+            SetCursorPos(p.x, p.y);
+
+            last_mousex = centerX;
+            last_mousey = centerY;
+
+            mouse_lock_initialized = true;
+            return;
+        }
+
+        float dx = window->mousex - centerX;
+        float dy = window->mousey - centerY;
+
+        dx *= mouse_sensitivity;
+        dy *= mouse_sensitivity;
+
+        yaw -= dx;
+        pitch += dy;
+
+        pitch = clamp(pitch, -40.0f, 80.0f);
+
+        // 用完立即把鼠标拉回中心（关键）
+        POINT p{ (LONG)centerX, (LONG)centerY };
+        ClientToScreen(window->hwnd, &p);
+        SetCursorPos(p.x, p.y);
+    
     }
+
+    //void update_mouse(Window* window)
+    //{
+    //    if (!mouse_look_enabled)
+    //        return;
+    //    RECT r;
+    //    GetClientRect(window->hwnd, &r);
+    //    int center_x = (r.right - r.left) / 2;
+    //    int center_y = (r.bottom - r.top) / 2;
+    //    // 当前鼠标位置（已经是相对窗口的）
+    //    float dx = window->mousex - center_x;
+    //    float dy = window->mousey - center_y;
+    //    dx *= mouse_sensitivity;
+    //    dy *= mouse_sensitivity;
+    //    yaw -= dx;
+    //    pitch += dy;
+    //    pitch = clamp(pitch, -40.0f, 80.0f);
+    //    SetCursorPos(window->width / 2, window->height / 2);
+    //}
 
     //void update_zoom(Window* window)
     //{

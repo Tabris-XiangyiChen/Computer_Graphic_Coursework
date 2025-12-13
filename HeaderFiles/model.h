@@ -249,7 +249,7 @@ public:
 		return v;
 	}
 
-	void init_mesh(Core* core)
+	void init_mesh(Core* core, std::string filename)
 	{
 		std::vector<STATIC_VERTEX> vertices;
 		for (int lat = 0; lat <= rings; lat++) {
@@ -285,17 +285,17 @@ public:
 		}
 		mesh.init(core, vertices, indices);
 
-		std::string tex_root_ALB = "Models/Textures/farmland_2k.png";
+		std::string tex_root_ALB = "Models/Textures/" + filename + ".png";
 		textureFilename = tex_root_ALB;
 		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
 		textures->load_onlyALB(core, tex_root_ALB, tex_root_ALB);
 	}
-	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures)
+	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures, std::string filename)
 	{
 		shader_manager = _shader_manager;
 		psos = _psos;
 		textures = _textures;
-		init_mesh(core);
+		init_mesh(core, filename);
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
@@ -334,7 +334,6 @@ public:
 
 	}
 };
-
 
 class Cube
 {

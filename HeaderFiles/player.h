@@ -57,7 +57,6 @@ public:
 		"waving r hand",      // WAVING_R_HAND
 	};
 
-	// 转换为字符串
 	inline std::string to_string(Charactor_State state) {
 		size_t index = static_cast<size_t>(state);
 		if (index < state_names.size()) {
@@ -66,14 +65,13 @@ public:
 		return "idle basic 01";  // 默认值
 	}
 
-	// 从字符串转换（需要线性搜索，但使用频率低）
 	inline Charactor_State from_string(const std::string & name) {
 		for (size_t i = 0; i < state_names.size(); ++i) {
 			if (state_names[i] == name) {
 				return static_cast<Charactor_State>(i);
 			}
 		}
-		return Charactor_State::IDLE_BASIC_01;  // 默认状态
+		return Charactor_State::IDLE_BASIC_01;
 	}
 };
 
@@ -116,8 +114,6 @@ public:
 		std::cout << "  Center: " << center.get_string() << std::endl;
 		std::cout << "  Size: " << size.get_string() << std::endl;
 
-		// 重要：我们需要将模型移到原点，并使脚踩在地面上
-		// 模型的脚在 min.z = -18.77，我们想让它在地面z=0
 		float ground_offset = -min.z;  // 应该是 18.77
 
 		// 同时需要将模型在X和Y方向上也移到原点
@@ -276,20 +272,34 @@ public:
 		{
 			move_dir = move_dir.Normalize();
 
-			// 平滑转向：让角色逐渐转向移动方向
+			//// 平滑转向：让角色逐渐转向移动方向
+			//Vec3 target_forward = move_dir;
+			//target_forward.y = 0;  // 保持在地面平面
+			//if (target_forward.length() > 0.001f)
+			//{
+			//	target_forward = target_forward.Normalize();
+
+			//	// 平滑插值当前朝向到目标朝向
+			//	float turn_amount = turn_speed * dt;
+			//	forward = lerp(forward, target_forward, turn_amount).Normalize();
+
+			//	// 重新计算右方向和上方向
+			//	right = up.Cross(forward).Normalize();
+			//}
+
+			Vec3 current_forward = forward;
 			Vec3 target_forward = move_dir;
-			target_forward.y = 0;  // 保持在地面平面
-			if (target_forward.length() > 0.001f)
-			{
-				target_forward = target_forward.Normalize();
+			target_forward.y = 0;
+			target_forward = target_forward.Normalize();
 
-				// 平滑插值当前朝向到目标朝向
-				float turn_amount = turn_speed * dt;
-				forward = lerp(forward, target_forward, turn_amount).Normalize();
+			float angle = signed_angle_y(current_forward, target_forward);
 
-				// 重新计算右方向和上方向
-				right = up.Cross(forward).Normalize();
-			}
+			float max_turn = turn_speed * dt;
+			angle = clamp(angle, -max_turn, max_turn);
+
+			// 绕 Y 轴旋转 forward
+			forward = Matrix::rotateY(angle).mulVec(forward).Normalize();
+			right = up.Cross(forward).Normalize();
 
 			// 应用移动
 			position = position + move_dir * s;
@@ -310,4 +320,20 @@ public:
 	{
 		farmer.draw(core);
 	}
+
+	private:
+		float signed_angle_y(const Vec3& from, const Vec3& to)
+		{
+			Vec3 f = from.Normalize();
+			Vec3 t = to.Normalize();
+
+			float dot = clamp(f.Dot(t), -1.0f, 1.0f);
+			float angle = acosf(dot); // 0 ~ PI
+
+			Vec3 cross = f.Cross(t);
+			if (cross.y < 0)
+				angle = -angle;
+
+			return angle; // 弧度
+		}
 };

@@ -10,7 +10,6 @@ struct INSTANCE
 	Matrix w;
 };
 
-
 class Mesh
 {
 public:
