@@ -135,6 +135,7 @@ public:
 			std::string fileName = folder_path + shader_name + ".cso";
 			std::wstring wideName = std::wstring(fileName.begin(), fileName.end());
 			std::ifstream compiledFile(fileName);
+
 			//if (compiledFile.is_open()) {//check if there is compiled shader code
 			//	D3DReadFileToBlob(wideName.c_str(), &shader.shader);
 			//}

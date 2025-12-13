@@ -65,6 +65,14 @@ public:
 		return "idle basic 01";  // 默认值
 	}
 
+	inline std::string operator[] (Charactor_State state) {
+		size_t index = static_cast<size_t>(state);
+		if (index < state_names.size()) {
+			return state_names[index];
+		}
+		return "idle basic 01";  // 默认值
+	}
+
 	inline Charactor_State from_string(const std::string & name) {
 		for (size_t i = 0; i < state_names.size(); ++i) {
 			if (state_names[i] == name) {
@@ -89,12 +97,15 @@ public:
 	Vec3 up;
 	Vec3 right;
 	Matrix world_matrix;
+	Matrix hitbox_world_matrix;
 
 	float speed = 100;
 	float turn_speed = 5.0f;  // 转向速度
 
-	// 动画状态
-	bool is_moving = false;
+	//bool is_moving = false;
+	//bool is_running = false;
+	Charactor_State move_state;
+	Charactor_State_Helper move_state_helper;
 	float current_animation_speed = 1.0f;
 
 	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos,Texture_Manager* textures, Camera* cam)
@@ -103,22 +114,21 @@ public:
 		//std::cout << farmer.hitbox.getMax().get_string() << farmer.hitbox.getMin().get_string() << std::endl;
 		
 		// 调试信息
-		Vec3 min = farmer.hitbox.getMin();
-		Vec3 max = farmer.hitbox.getMax();
-		Vec3 center = farmer.hitbox.get_center();
-		Vec3 size = max - min;
+		//Vec3 min = farmer.hitbox.getMin();
+		//Vec3 max = farmer.hitbox.getMax();
+		//Vec3 center = farmer.hitbox.get_center();
+		//Vec3 size = max - min;
 
-		std::cout << "Model bounding box:" << std::endl;
-		std::cout << "  Min: " << min.get_string() << std::endl;
-		std::cout << "  Max: " << max.get_string() << std::endl;
-		std::cout << "  Center: " << center.get_string() << std::endl;
-		std::cout << "  Size: " << size.get_string() << std::endl;
+		//std::cout << "Model bounding box:" << std::endl;
+		//std::cout << "  Min: " << min.get_string() << std::endl;
+		//std::cout << "  Max: " << max.get_string() << std::endl;
+		//std::cout << "  Center: " << center.get_string() << std::endl;
+		//std::cout << "  Size: " << size.get_string() << std::endl;
 
-		float ground_offset = -min.z;  // 应该是 18.77
+		//float ground_offset = -min.z;  // 应该是 18.77
 
-		// 同时需要将模型在X和Y方向上也移到原点
-		float x_offset = -center.x;    // -0
-		float y_offset = -center.y;    // -90.24
+		//float x_offset = -center.x;
+		//float y_offset = -center.y;
 
 		// 设置位置，使模型站在原点，面朝Y轴正方向
 		//position = Vec3(x_offset, y_offset, ground_offset);
@@ -174,6 +184,7 @@ public:
 
 		//world_matrix = T.mul(R);
 		//world_matrix = T.mul(R).mul(model_adjust);
+		hitbox_world_matrix = T.mul(R);
 		world_matrix = T.mul(R).mul(model_adjust).mul(zm);
 		//world_matrix = T.mul(R).Rotate_Z(M_PI / 2);
 		//world_matrix = T;
@@ -206,40 +217,14 @@ public:
 
 		third_cam.update(wnd, dt);
 
-		std::string animation_name = is_moving ? "run 00" : "idle basic 01";
-		farmer.update(world_matrix, camera->view_projection, dt, "idle basic 01");
+		//farmer.update(world_matrix, camera->view_projection, dt, move_state_helper[move_state]);
 	}
-
-	/*void update_movement(Window* window, float dt)
-	{
-		float s = speed * dt;
-
-		if (window->keys['I'])
-			position = position + forward * s;
-
-		if (window->keys['K'])
-			position = position - forward * s;
-
-		if (window->keys['J'])
-			position = position - right * s;
-
-		if (window->keys['L'])
-			position = position + right * s;
-
-		if (window->keys['U'])
-			position = position - up * s;
-
-		if (window->keys['O'])
-			position = position + up * s;
-
-		update_world_matrix();
-	}*/
 
 	void update_movement(Window* window, float dt)
 	{
 		float s = speed * dt;
 		Vec3 move_dir(0, 0, 0);
-		is_moving = false;
+		move_state = Charactor_State::IDLE_BASIC_01;
 
 		// 获取相机在地面平面上的方向
 		Vec3 cam_forward_flat = camera->get_forward_flat();
@@ -249,27 +234,36 @@ public:
 		if (window->keys['W'])
 		{
 			move_dir = move_dir + cam_forward_flat;
-			is_moving = true;
 		}
 		if (window->keys['S'])
 		{
 			move_dir = move_dir - cam_forward_flat;
-			is_moving = true;
 		}
 		if (window->keys['A'])
 		{
 			move_dir = move_dir - cam_right_flat;
-			is_moving = true;
 		}
 		if (window->keys['D'])
 		{
 			move_dir = move_dir + cam_right_flat;
-			is_moving = true;
 		}
 
+		bool is_moving = move_dir.length() > 0.001f;
+		bool is_running = window->keys[VK_SHIFT];
+
 		// 如果有移动输入
-		if (move_dir.length() > 0.001f)
+		if (is_moving)
 		{
+			if (is_running)
+			{
+				move_state = Charactor_State::RUN;
+				speed = 200.0f;
+			}
+			else
+			{
+				move_state = Charactor_State::WALK;
+				speed = 100.0f;
+			}
 			move_dir = move_dir.Normalize();
 
 			//// 平滑转向：让角色逐渐转向移动方向
@@ -310,15 +304,18 @@ public:
 		else
 		{
 			current_animation_speed = 1.0f;
+			move_state = Charactor_State::IDLE_BASIC_01;
 		}
 
 		// 更新世界矩阵
 		update_world_matrix();
 	}
 
-	void draw(Core* core)
+	void draw(Core* core, Window* wnd, float dt)
 	{
-		farmer.draw(core);
+		update(core, wnd, dt);
+		farmer.draw(core, world_matrix, camera->view_projection, dt, move_state_helper[move_state]);
+		farmer.hitbox.draw(core, hitbox_world_matrix, camera->view_projection);
 	}
 
 	private:

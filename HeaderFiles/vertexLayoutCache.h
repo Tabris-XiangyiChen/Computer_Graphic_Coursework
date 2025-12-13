@@ -22,6 +22,11 @@ struct ANIMATED_VERTEX
 	float boneWeights[4];
 };
 
+struct LINE_VERTEX
+{
+	Vec3 pos;
+};
+
 //Update layout for shader
 //– Need layout management
 //– Suggest simple class with static methods
@@ -83,4 +88,12 @@ public:
 		return desc;
 	}
 
+	static const D3D12_INPUT_LAYOUT_DESC& getStaticLineLayout() {
+		static const D3D12_INPUT_ELEMENT_DESC iHitboxnputLayoutStatic[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		};
+		static const D3D12_INPUT_LAYOUT_DESC desc = { iHitboxnputLayoutStatic, 1 };
+		return desc;
+	}
 };

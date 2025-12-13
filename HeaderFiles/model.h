@@ -8,6 +8,7 @@
 #include "GEMLoader.h"
 #include "animation.h"
 #include "textureloader.h"
+#include "AABB.h"
 
 static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 {
@@ -19,112 +20,6 @@ static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 	v.tv = tv;
 	return v;
 }
-
-class AABB {
-private:
-	Vec3 m_min;
-	Vec3 m_max;
-	Vec3 m_center;      // 缓存中心点
-	Vec3 m_halfSize;    // 缓存半长
-	bool m_dirty;       // 脏标记
-
-public:
-	AABB() : m_min(FLT_MAX, FLT_MAX, FLT_MAX),
-		m_max(-FLT_MAX, -FLT_MAX, -FLT_MAX),
-		m_dirty(true) {
-	}
-
-	AABB(const Vec3& min, const Vec3& max) :
-		m_min(min), m_max(max), m_dirty(true) {
-	}
-
-	AABB(const std::vector<Vec3>& points) {
-		reset();
-		for (const auto& point : points) {
-			expand(point);
-		}
-	}
-
-	// reset to orignal state
-	void reset() {
-		m_min = Vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-		m_max = Vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-		m_dirty = true;
-	}
-
-	// check the point value to update
-	void expand(const Vec3& point) {
-		m_min.x = min(m_min.x, point.x);
-		m_min.y = min(m_min.y, point.y);
-		m_min.z = min(m_min.z, point.z);
-
-		m_max.x = max(m_max.x, point.x);
-		m_max.y = max(m_max.y, point.y);
-		m_max.z = max(m_max.z, point.z);
-
-		m_dirty = true;
-	}
-
-	// update from another object
-	void expand(const AABB& other) {
-		expand(other.m_min);
-		expand(other.m_max);
-	}
-
-	// caculate value
-	void update_cache() {
-		if (m_dirty) {
-			m_center = (m_min + m_max) * 0.5f;
-			m_halfSize = (m_max - m_min) * 0.5f;
-			m_dirty = false;
-		}
-	}
-
-	const Vec3& getMin() const { return m_min; }
-	const Vec3& getMax() const { return m_max; }
-
-	Vec3 get_center() {
-		update_cache();
-		return m_center;
-	}
-
-	Vec3 get_halfSize() {
-		update_cache();
-		return m_halfSize;
-	}
-
-	float get_volume() const {
-		Vec3 size = m_max - m_min;
-		return size.x * size.y * size.z;
-	}
-
-	// get 8 vertex
-	std::array<Vec3, 8> get_vertices() const {
-		return {
-			Vec3(m_min.x, m_min.y, m_min.z),
-			Vec3(m_max.x, m_min.y, m_min.z),
-			Vec3(m_min.x, m_max.y, m_min.z),
-			Vec3(m_max.x, m_max.y, m_min.z),
-			Vec3(m_min.x, m_min.y, m_max.z),
-			Vec3(m_max.x, m_min.y, m_max.z),
-			Vec3(m_min.x, m_max.y, m_max.z),
-			Vec3(m_max.x, m_max.y, m_max.z)
-		};
-	}
-
-	// transform AABB box
-	AABB transform(const Matrix& transform) const {
-		std::array<Vec3, 8> vertices = get_vertices();
-		AABB result;
-
-		for (const auto& vertex : vertices) {
-			Vec3 transformed = transform.mulVec(vertex);
-			result.expand(transformed);
-		}
-
-		return result;
-	}
-};
 
 class Plane
 {
@@ -234,7 +129,7 @@ public:
 
 	int rings= 500; 
 	int segments = 500;
-	float radius = 2000.f;
+	float radius = 2500.f;
 
 	STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 	{
@@ -643,7 +538,7 @@ public:
 	std::vector<std::string> textureFilenames;
 	Texture_Manager* textures;
 
-	AABB hitbox;
+	HitBox hitbox;
 
 	void init_meshes(Core* core, std::string filename)
 	{
@@ -660,7 +555,7 @@ public:
 				ANIMATED_VERTEX v;
 				memcpy(&v, &gemmeshes[i].verticesAnimated[j], sizeof(ANIMATED_VERTEX));
 				vertices.push_back(v);
-				hitbox.expand(v.pos);
+				hitbox.local_aabb.expand(v.pos);
 			}
 
 			std::string tex_root_alb = gemmeshes[i].material.find("albedo").getValue();
@@ -679,7 +574,7 @@ public:
 			mesh->init_animation(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
-		hitbox.update_cache();
+		hitbox.local_aabb.update_cache();
 
 		//Bones
 		memcpy(&animation.skeleton.globalInverse, &gemanimation.globalInverse, 16 * sizeof(float));
@@ -730,13 +625,19 @@ public:
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->find(vs_name)->shader, shader_manager->find(ps_name)->shader, VertexLayoutCache::getAnimatedLayout());
 		
-		
+		hitbox.init(core, shader_manager, psos, hitbox.local_aabb);
 	}
 
 	void updateWorld( Matrix& w)
 	{
 		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &w);
 	}
+
+	//void update_hitbox(Matrix planeWorld)
+	//{
+	//	hitbox = hitbox.transform(planeWorld);
+	//	hitbox.update_cache();
+	//}
 
 	void update_animation_instance(AnimationInstance* ani_in, float dt, std::string move)
 	{
@@ -751,7 +652,7 @@ public:
 		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &planeWorld);
 		shader_manager->update(vs_name, "animatedMeshBuffer", "VP", &vp);
 		shader_manager->update(vs_name, "animatedMeshBuffer", "bones", animation_instance.matrices);
-		//hitbox.
+		//update_hitbox(planeWorld);
 	}
 
 	void apply(Core* core)
@@ -772,7 +673,9 @@ public:
 		}
 	}
 
-	void draw(Core* core) {
+	void draw(Core* core, Matrix& planeWorld, Matrix& vp, float dt, std::string move) 
+	{
+		update(planeWorld, vp, dt, move);
 		core->beginRenderPass();
 		apply(core);
 		psos->bind(core, pso_name);
@@ -783,6 +686,5 @@ public:
 			textures->updateTexturePS(core, textureFilenames[i]);
 			meshes[i]->draw(core);
 		}
-
 	}
 };

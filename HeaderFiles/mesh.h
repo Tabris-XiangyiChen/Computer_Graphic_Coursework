@@ -88,9 +88,23 @@ public:
 		inputLayoutDesc = VertexLayoutCache::getAnimatedLayout();
 	}
 
+	void init_line(Core* core, std::vector<LINE_VERTEX> vertices, std::vector<unsigned int> indices)
+	{
+		init(core, &vertices[0], sizeof(LINE_VERTEX), vertices.size(), &indices[0], indices.size());
+		inputLayoutDesc = VertexLayoutCache::getStaticLineLayout();
+	}
+
 	void draw(Core* core)
 	{
 		core->getCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		core->getCommandList()->IASetVertexBuffers(0, 1, &vbView);
+		core->getCommandList()->IASetIndexBuffer(&ibView);
+		core->getCommandList()->DrawIndexedInstanced(numMeshIndices, 1, 0, 0, 0);
+	}
+
+	void draw_line(Core* core)
+	{
+		core->getCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 		core->getCommandList()->IASetVertexBuffers(0, 1, &vbView);
 		core->getCommandList()->IASetIndexBuffer(&ibView);
 		core->getCommandList()->DrawIndexedInstanced(numMeshIndices, 1, 0, 0, 0);

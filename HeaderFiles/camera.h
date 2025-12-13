@@ -35,7 +35,7 @@ public:
         fov(60.0f),
         aspect(16.0f / 9.0f),
         near_plane(0.01f),
-        far_plane(3000.0f),
+        far_plane(5000.0f),
         speed(20.f),
         mouse_sensitivity(0.1f),
         yaw(0.0f),

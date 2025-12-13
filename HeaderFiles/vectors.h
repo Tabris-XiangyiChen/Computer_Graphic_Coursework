@@ -569,7 +569,7 @@ public:
 			(v.x * m[12] + v.y * m[13] + v.z * m[14] + v.w * m[15]));
 	}
 
-	Vec3 mulPoint(const Vec3& v)
+	Vec3 mulPoint(const Vec3& v) const
 	{
 		return Vec3(
 			(v.x * m[0] + v.y * m[1] + v.z * m[2]) + m[3],

@@ -95,11 +95,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		flower.update(world, camera_.view_projection);
 		flower.draw(&core);
 
-		trex.update(world, camera_.view_projection, dt, "attack");
-		trex.draw(&core);
+		//trex.update(world, camera_.view_projection, dt, "attack");
+		trex.draw(&core, world, camera_.view_projection, dt, "attack");
 
-		farmer.update(&core, &win, dt);
-		farmer.draw(&core);
+		//farmer.update(&core, &win, dt);
+		farmer.draw(&core, &win, dt);
 
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
 		//fam.draw(&core);
