@@ -23,13 +23,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	win.create("My Window", WINDOW_WIDTH, WINDOW_HEIGHT, 100, 0);
 	core.init(win.hwnd, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	ConstantBuffer2 constBufferCPU2;
-	constBufferCPU2.time = 0;
-
 	GamesEngineeringBase::Timer timer;
-
+	ConstantBuffer_Manager cm;
+	cm.init_perframe_data();
 	Shader_Manager sm;
-	sm.init(&core);
+	sm.init(&core, &cm);
 	PSOManager psos;
 	Texture_Manager tm;
 
@@ -86,6 +84,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		core.beginFrame();
 		win.processMessages();
 
+		core.beginRenderPass();
+		cm.update_frameData(&core, dt);
+
 		plane.draw(&core, world, camera_.view_projection);
 		sphere.draw(&core, world, camera_.view_projection);
 
@@ -108,6 +109,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		{
 			break;
 		}
+
 		core.finishFrame();
 	}
 	core.flushGraphicsQueue();

@@ -39,10 +39,10 @@
     <FxCompile Include="Shaders\VS_Line.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PS_Lne.hlsl">
+    <FxCompile Include="Shaders\PS_Line.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PS_Line.hlsl">
+    <FxCompile Include="Shaders\VS_Static_Ins_VAni.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
