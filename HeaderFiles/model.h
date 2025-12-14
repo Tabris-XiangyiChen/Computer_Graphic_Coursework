@@ -409,7 +409,8 @@ public:
 
 	std::vector<INSTANCE> instances_matix;
 
-	std::string vs_name = "VS_Static_Ins";
+	//std::string vs_name = "VS_Static_Ins";
+	std::string vs_name = "VS_Static_Ins_VAni";
 	std::string ps_name = "PS_Trans";
 	std::string pso_name = "StaticModel_Trans_Ins_PSO";
 

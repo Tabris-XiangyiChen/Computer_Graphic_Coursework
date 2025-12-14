@@ -93,6 +93,7 @@ public:
 			buffer.cbSizeInBytes = ConstantBuffer_totalSize;
 			buffer.init(core, 1024);
 
+			//insert the preframe buffer into manager
 			if (buffer.name == "PerFrameBuffer")
 				cb_manager->insert(buffer.name, std::pair<std::string, ConstantBuffer>(buffer.name, buffer));
 			else
@@ -111,12 +112,13 @@ public:
 		return totalSize;
 	}
 
-	void updateTexturePS(Core* core, std::string name, int heapOffset) {
-		UINT bindPoint = textureBindPoints[name];
-		D3D12_GPU_DESCRIPTOR_HANDLE handle = core->srvHeap.gpuHandle;
-		handle.ptr = handle.ptr + (UINT64)(heapOffset - bindPoint) * (UINT64)core->srvHeap.incrementSize;
-		core->getCommandList()->SetGraphicsRootDescriptorTable(2, handle);
-	}
+
+	//void updateTexturePS(Core* core, std::string name, int heapOffset) {
+	//	UINT bindPoint = textureBindPoints[name];
+	//	D3D12_GPU_DESCRIPTOR_HANDLE handle = core->srvHeap.gpuHandle;
+	//	handle.ptr = handle.ptr + (UINT64)(heapOffset - bindPoint) * (UINT64)core->srvHeap.incrementSize;
+	//	core->getCommandList()->SetGraphicsRootDescriptorTable(2, handle);
+	//}
 
 };
 
@@ -177,10 +179,10 @@ public:
 		//}
 	}
 
-	void updateTexturePS(Core* core, std::string shader_name, std::string t_bindpoint, Texture* texture)
-	{
-		shaders[shader_name].updateTexturePS(core, t_bindpoint, texture->heapOffset);
-	}
+	//void updateTexturePS(Core* core, std::string shader_name, std::string t_bindpoint, Texture* texture)
+	//{
+	//	shaders[shader_name].updateTexturePS(core, t_bindpoint, texture->heapOffset);
+	//}
 
 	Shader* find(std::string name)
 	{
