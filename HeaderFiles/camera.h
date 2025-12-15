@@ -348,7 +348,7 @@ private:
         yaw -= dx;
         pitch += dy;
 
-        pitch = clamp(pitch, -40.0f, 80.0f);
+        pitch = clamp(pitch, -30.0f, 80.0f);
 
         // 用完立即把鼠标拉回中心（关键）
         POINT p{ (LONG)centerX, (LONG)centerY };

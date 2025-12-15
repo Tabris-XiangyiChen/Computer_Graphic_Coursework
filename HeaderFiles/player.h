@@ -16,13 +16,13 @@ enum class Charactor_State
 	IDLE_BASIC_02,
 	IDLE_COMBAT,
 	IDLE_SIT_CHAIR,
-	IDLE_WHELL_BARROW,
+	IDLE_WHEELBARROW,
 	JUMP,
 	LAND,
 	RUN,
 	WALK_CARRY,
 	WALK_INPLACE,
-	WALK_WHELLBARROW,
+	WALK_WHEELBARROW,
 	WALK,
 	WAVING_L_HAND,
 	WAVING_R_HAND,
@@ -45,13 +45,13 @@ public:
 		"idle basic 02",      // IDLE_BASIC_02
 		"idle combat",        // IDLE_COMBAT
 		"idle sit chair",     // IDLE_SIT_CHAIR
-		"idle whell barrow",  // IDLE_WHELL_BARROW
+		"idle wheelbarrow",   // IDLE_WHELL_BARROW
 		"jump",               // JUMP
 		"land",               // LAND
 		"run",                // RUN
 		"walk carry",         // WALK_CARRY
 		"walk inplace",       // WALK_INPLACE
-		"walk whellbarrow",   // WALK_WHELLBARROW
+		"walk wheelbarrow",   // WALK_WHELLBARROW
 		"walk",               // WALK
 		"waving l hand",      // WAVING_L_HAND
 		"waving r hand",      // WAVING_R_HAND
@@ -100,7 +100,7 @@ public:
 	Matrix hitbox_world_matrix;
 
 	float speed = 100;
-	float turn_speed = 5.0f;  // 转向速度
+	float turn_speed = 5.0f;
 
 	//bool is_moving = false;
 	//bool is_running = false;
@@ -205,7 +205,7 @@ public:
 	{
 		float s = speed * dt;
 		Vec3 move_dir(0, 0, 0);
-		move_state = is_carrying ? Charactor_State::IDLE_WHELL_BARROW : Charactor_State::IDLE_BASIC_01;
+		move_state = is_carrying ? Charactor_State::IDLE_WHEELBARROW : Charactor_State::IDLE_BASIC_01;
 
 		// 获取相机在地面平面上的方向
 		Vec3 cam_forward_flat = camera->get_forward_flat();
@@ -236,7 +236,7 @@ public:
 		// 如果有移动输入
 		if (is_moving)
 		{
-			if (is_running)
+			if (is_running && !is_carrying)
 			{
 				move_state = Charactor_State::RUN;
 				speed = 200.0f;
@@ -284,12 +284,15 @@ public:
 			position = position + move_dir * s;
 
 			// 根据移动速度调整动画速度
-			current_animation_speed = move_dir.length() * 2.0f;
+			//current_animation_speed = move_dir.length() * 2.0f;
 		}
 		else
 		{
-			current_animation_speed = 1.0f;
-			move_state = Charactor_State::IDLE_BASIC_01;
+			//current_animation_speed = 1.0f;
+			move_state = is_carrying
+				? Charactor_State::IDLE_WHEELBARROW
+				: Charactor_State::IDLE_BASIC_01;
+			//move_state = Charactor_State::IDLE_BASIC_01;
 		}
 
 		// 更新世界矩阵
@@ -305,10 +308,11 @@ public:
 		if (action_timer <= 0.0f)
 		{
 			is_doing_action = false;
+			current_animation_speed = 1.0f;
 
 			// 动作结束后的状态
 			if (is_carrying)
-				move_state = Charactor_State::IDLE_WHELL_BARROW;
+				move_state = Charactor_State::IDLE_WHEELBARROW;
 			else
 				move_state = Charactor_State::IDLE_BASIC_01;
 		}
@@ -325,6 +329,8 @@ public:
 			is_doing_action = true;
 			action_timer = 1.6f;
 
+			current_animation_speed = 2.0f;
+
 			move_state = Charactor_State::ATTACK_A;
 			return;
 		}
@@ -334,6 +340,8 @@ public:
 		{
 			is_doing_action = true;
 			action_timer = 2.5f;
+
+			current_animation_speed = 2.0f;
 
 			move_state = Charactor_State::GRAB_LOW;
 			is_carrying = true;
@@ -345,7 +353,8 @@ public:
 	void draw(Core* core, Window* wnd, float dt)
 	{
 		update(core, wnd, dt);
-		farmer.draw(core, world_matrix, camera->view_projection, dt, move_state_helper[move_state]);
+		float ani_dt =  dt * current_animation_speed;
+		farmer.draw(core, world_matrix, camera->view_projection, ani_dt, move_state_helper[move_state]);
 		// update hitbox pos
 		farmer.hitbox.update_from_world(hitbox_world_matrix);
 		farmer.hitbox.draw(core, hitbox_world_matrix, camera->view_projection);

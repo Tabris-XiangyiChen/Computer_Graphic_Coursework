@@ -678,8 +678,8 @@ public:
 			ani_in->resetAnimationTime();
 		}
 	}
-	void update(Matrix& planeWorld, Matrix& vp, float dt, std::string move) {
-		update_animation_instance(&animation_instance, dt, move);
+	void update(Matrix& planeWorld, Matrix& vp, float ani_dt, std::string move) {
+		update_animation_instance(&animation_instance, ani_dt, move);
 		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &planeWorld);
 		shader_manager->update(vs_name, "animatedMeshBuffer", "VP", &vp);
 		shader_manager->update(vs_name, "animatedMeshBuffer", "bones", animation_instance.matrices);
