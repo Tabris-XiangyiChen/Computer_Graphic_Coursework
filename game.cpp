@@ -68,6 +68,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	bull.set_target(&farmer);
 	float time = 0;
 	//std::cout << "out" << std::endl;
+
+	std::vector<NPC_Base*> npc_vec;
+	npc_vec.push_back(&bull);
+
 	while (1) {
 		float dt = timer.dt();
 
@@ -105,7 +109,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		trex.draw(&core, world, camera_.view_projection, dt, "attack");
 
 		//farmer.update(&core, &win, dt);
-		farmer.draw(&core, &win, dt);
+		farmer.draw(&core, &win, dt, npc_vec);
 		bull.draw(&core, camera_.view_projection, dt);
 
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");

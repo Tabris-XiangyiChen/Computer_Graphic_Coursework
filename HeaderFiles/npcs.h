@@ -4,7 +4,7 @@
 #include "player.h"
 #include <string>
 
-
+/*
 enum class NPC_State
 {
 	ATTACK_01 = 0,
@@ -94,6 +94,10 @@ public:
 	float speed = 100.0f;
 	float turn_speed = 5.0f;
 
+	float health;
+	float attack;
+	bool is_dead = false;
+
 	NPC_State move_state;
 	NPC_State_Helper state_helper;
 
@@ -104,11 +108,13 @@ public:
 
 	virtual ~NPC_Base() = default;
 
-	void init_data(Vec3 _pos = {0, 0, 500}, Vec3 _forward = {0, 0, -1}, float _speed = 100.0f)
+	void init_data(Vec3 _pos = {0, 0, 500}, Vec3 _forward = {0, 0, -1}, float _speed = 100.0f, float _health = 20, float _attack = 5)
 	{
 		position = _pos;
 		forward = _forward;
 		speed = _speed;
+		health = _health;
+		attack = _attack;
 	}
 
 	virtual void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos, Texture_Manager* textures, std::string model_name)
@@ -120,6 +126,15 @@ public:
 	}
 
 	virtual void update(float dt) = 0;
+
+	virtual void suffer_attack(float damage)
+	{
+		if (health > 0)
+		{
+			health -= damage;
+		}
+		is_dead = true;
+	}
 
 protected:
 
@@ -149,7 +164,7 @@ protected:
 
 		return angle; // 弧度
 	}
-};
+};*/
 
 class AnimalNPC : public NPC_Base
 {
@@ -174,16 +189,36 @@ public:
 
 	void update_world_matrix()
 	{
-		Matrix T = Matrix::Translate(position);
+		if(is_be_holding)
+		{
+			Vec3 handle_pos = Vec3(target->position.x, target->position.y + 100.0f, target->position.z);
+			Matrix T = Matrix::Translate(handle_pos);
 
-		Matrix R;
-		R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
-		R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
-		R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
-		//Matrix zm = Matrix::rotateZ(M_PI);
+			Matrix R;
+			R.a[0][0] = target->right.x;   R.a[0][1] = target->right.y;   R.a[0][2] = target->right.z;
+			R.a[1][0] = target->up.x;      R.a[1][1] = target->up.y;      R.a[1][2] = target->up.z;
+			R.a[2][0] = target->forward.x; R.a[2][1] = target->forward.y; R.a[2][2] = target->forward.z;
 
-		hitbox_world_matrix = T.mul(R).mul(model_adjust);
-		world_matrix = T.mul(R).mul(model_adjust);
+			R = R.mul(Matrix::rotateY(-M_PI / 2));
+
+
+			hitbox_world_matrix = T.mul(R).mul(model_adjust);
+			world_matrix = T.mul(R).mul(model_adjust);
+		}
+		else
+		{
+			Matrix T = Matrix::Translate(position);
+
+			Matrix R;
+			R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
+			R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
+			R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
+
+			Matrix handle_m = Matrix::rotateZ(M_PI / 2);
+
+			hitbox_world_matrix = T.mul(R).mul(model_adjust);
+			world_matrix = T.mul(R).mul(model_adjust);
+		}
 	}
 
 	void update(float dt)
@@ -197,6 +232,17 @@ public:
 	virtual void update_ai(float dt)
 	{
 		if (!target) return;
+		if (is_dead)
+		{
+			move_state = NPC_State::DEATH;
+			if (death_ani_time >= 0)
+			{
+				death_ani_time -= dt;
+			}
+			else
+				current_animation_speed = 0.0f;
+			return;
+		}
 
 		float dist = (target->position - position).length();
 		time += dt;
@@ -269,7 +315,6 @@ private:
 
 	}
 
-
 	void do_attack()
 	{
 		if (is_doing_action) return;
@@ -283,4 +328,5 @@ private:
 	{
 		move_state = NPC_State::IDLE;
 	}
+
 };

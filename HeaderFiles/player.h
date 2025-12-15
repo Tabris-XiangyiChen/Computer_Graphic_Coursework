@@ -3,6 +3,182 @@
 #include "camera.h"
 #include <string>
 
+enum class NPC_State
+{
+	ATTACK_01 = 0,
+	ATTACK_02,
+	DANCE,
+	DEATH,
+	EATING,
+	HITREACT,
+	IDLE_SITTING,
+	IDLE_VARIATION,
+	IDLE,
+	RUN_FORWARD,
+	SIT_TO_STAND,
+	STAND_TO_SIT,
+	TROT_FORWARD,
+	TURN_90_L,
+	TURN_90_R,
+	WALK_BACKFORWARDS,
+	WALK_FORWARD,
+
+	MAX_TYPE
+};
+
+class NPC_State_Helper
+{
+public:
+	const std::array<std::string, static_cast<size_t>(NPC_State::MAX_TYPE)> state_names = {
+		"attack01",           // ATTACK_01 = 0
+		"attack02",           // ATTACK_02 = 1
+		"dance",               // DANCE = 2
+		"death",               // DEATH = 3
+		"eating",              // EATING = 4
+		"hitreact",            // HITREACT = 5
+		"idle sitting",        // IDLE_SITTING = 6
+		"idle variation",      // IDLE_VARIATION = 7
+		"idle",                // IDLE = 8
+		"run forward",         // RUN_FORWARD = 9
+		"sit to stand",        // SIT_TO_STAND = 10
+		"stand to sit",        // STAND_TO_SIT = 11
+		"trot forward",        // TROT_FORWARD = 12
+		"turn 90 l",           // TURN_90_L = 13
+		"turn 90 r",           // TURN_90_R = 14
+		"walk backwards",      // WALK_BACKFORWARDS = 15
+		"walk forward",        // WALK_FORWARD = 16
+	};
+
+	inline std::string to_string(NPC_State state) {
+		size_t index = static_cast<size_t>(state);
+		if (index < state_names.size()) {
+			return state_names[index];
+		}
+		return "idle";
+	}
+
+	inline std::string operator[] (NPC_State state) {
+		size_t index = static_cast<size_t>(state);
+		if (index < state_names.size()) {
+			return state_names[index];
+		}
+		return "idle";
+	}
+
+	inline NPC_State from_string(const std::string& name) {
+		for (size_t i = 0; i < state_names.size(); ++i) {
+			if (state_names[i] == name) {
+				return static_cast<NPC_State>(i);
+			}
+		}
+		return NPC_State::IDLE;
+	}
+};
+
+
+class NPC_Base
+{
+public:
+	Object_Animation model;
+
+	Vec3 position;
+	Vec3 forward;
+	Vec3 up;
+	Vec3 right;
+
+	Matrix world_matrix;
+	Matrix hitbox_world_matrix;
+
+	float speed = 100.0f;
+	float turn_speed = 5.0f;
+
+	float health;
+	float attack;
+	bool is_dead = false;
+	float death_time = 0;
+	float death_ani_time = 2.0f;
+
+	NPC_State move_state;
+	NPC_State_Helper state_helper;
+
+	float current_animation_speed = 1.0f;
+
+	bool is_doing_action = false;
+	float action_timer = 0.0f;
+
+	bool is_be_holding = false;
+
+	virtual ~NPC_Base() = default;
+
+	void init_data(Vec3 _pos = { 0, 0, 500 }, Vec3 _forward = { 0, 0, -1 }, float _speed = 100.0f, float _health = 20, float _attack = 5)
+	{
+		position = _pos;
+		forward = _forward;
+		speed = _speed;
+		health = _health;
+		attack = _attack;
+	}
+	void reset_pos_data(Vec3 _pos, Vec3 _forward, Vec3 _right)
+	{
+		position = _pos;
+		forward = _forward;
+		right = _right;
+	}
+
+	virtual void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos, Texture_Manager* textures, std::string model_name)
+	{
+		model.init(core, shader_manager, psos, textures, model_name);
+
+		up = Vec3(0, 1, 0);
+		right = up.Cross(forward).Normalize();
+	}
+
+	virtual void update(float dt) = 0;
+
+	virtual void suffer_attack(float damage)
+	{
+		if (health > 0 && !is_dead)
+		{
+			health -= damage;
+		}
+		if(health <= 0)
+		{
+			health = 0;
+			is_dead = true;
+		}
+	}
+
+protected:
+
+	void update_action(float dt)
+	{
+		if (!is_doing_action) return;
+
+		action_timer -= dt;
+		if (action_timer <= 0.0f)
+		{
+			is_doing_action = false;
+			current_animation_speed = 1.0f;
+		}
+	}
+
+	float signed_angle_y(const Vec3& from, const Vec3& to)
+	{
+		Vec3 f = from.Normalize();
+		Vec3 t = to.Normalize();
+
+		float dot = clamp(f.Dot(t), -1.0f, 1.0f);
+		float angle = acosf(dot); // 0 ~ PI
+
+		Vec3 cross = f.Cross(t);
+		if (cross.y < 0)
+			angle = -angle;
+
+		return angle; // 弧度
+	}
+};
+
+
 enum class Charactor_State
 {
 	ATTACK_A = 0,
@@ -101,6 +277,7 @@ public:
 
 	float speed = 100;
 	float turn_speed = 5.0f;
+	float attack = 10.0f;
 
 	//bool is_moving = false;
 	//bool is_running = false;
@@ -109,6 +286,7 @@ public:
 	float current_animation_speed = 1.0f;
 
 	bool is_carrying = false;
+	NPC_Base* carrying_item = nullptr;
 	bool is_doing_action = false;   // is attacking / grabing
 	float action_timer = 0.0f;
 
@@ -143,7 +321,6 @@ public:
 
 	void update_world_matrix()
 	{
-		// 位置变换
 		Matrix T = Matrix::Translate(position);
 
 		// 创建朝向矩阵
@@ -166,12 +343,12 @@ public:
 	}
 
 
-	void update(Core* core, Window* wnd, float dt)
+	void update(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs)
 	{
-		handle_action_input(wnd);
+		//handle_action_input(wnd);
 
-		//handle_attack_input(wnd, enemies);
-		//handle_pickup_input(wnd, items);
+		handle_attack_input(wnd, npcs);
+		handle_pickup_input(wnd, npcs);
 
 		update_action(dt);
 		
@@ -330,54 +507,58 @@ public:
 		return atk;
 	}
 
-	bool try_attack(const std::vector<AABB*>& enemies)
+	bool try_attack(const std::vector<NPC_Base*>& enemies)
 	{
 		AABB attack_box = make_attack_aabb();
 
-		for (AABB* enemy : enemies)
+		for (NPC_Base* enemy : enemies)
 		{
-			if (attack_box.intersects(*enemy))
+			if (AABB::AABB_Intersect(attack_box, enemy->model.hitbox.world_aabb))
 			{
 				// TODO: enemy->take_damage();
+				enemy->suffer_attack(attack);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void handle_attack_input(Window* window,
-		const std::vector<AABB*>& enemies)
+	void handle_attack_input(Window* window, const std::vector<NPC_Base*>& enemies)
 	{
 		if (is_doing_action)
 			return;
 
-		if (window->mouseButtons[0])
+		if (window->mouseButtons[0] && !is_carrying)
 		{
 			is_doing_action = true;
-			action_timer = 0.6f;
+			action_timer = 1.0f;
+
+			current_animation_speed = 2.0f;
 			move_state = Charactor_State::ATTACK_A;
 
-			try_attack(enemies); // ⭐ 这里做一次判定
+			try_attack(enemies);
 		}
 	}
 
 
-	bool try_pickup(const std::vector<AABB*>& items)
+	bool try_pickup(const std::vector<NPC_Base*>& items)
 	{
 		AABB pickup_box = farmer.hitbox.world_aabb;
 
-		for (AABB* item : items)
+		for (NPC_Base* item : items)
 		{
-			if (pickup_box.intersects(*item))
+			if (AABB::AABB_Intersect(pickup_box, item->model.hitbox.world_aabb) && item->is_dead)
 			{
 				// TODO: 绑定物体到角色（先只标记）
+				item->is_be_holding = true;
+				carrying_item = item;
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void handle_pickup_input(Window* window, const std::vector<AABB*>& items)
+	void handle_pickup_input(Window* window, const std::vector<NPC_Base*>& items)
 	{
 		static bool lastE = false;
 		bool nowE = window->keys['E'];
@@ -387,12 +568,14 @@ public:
 			// 当前没拿东西 → 尝试拾取
 			if (!is_carrying)
 			{
+				is_doing_action = true;
+				action_timer = 1.0f;
+
+				current_animation_speed = 2.0f;
+
+				move_state = Charactor_State::GRAB_LOW;
 				if (try_pickup(items))
 				{
-					is_doing_action = true;
-					action_timer = 0.8f;
-
-					move_state = Charactor_State::GRAB_LOW;
 					is_carrying = true;
 				}
 			}
@@ -402,8 +585,15 @@ public:
 				is_doing_action = true;
 				action_timer = 0.5f;
 
-				move_state = Charactor_State::IDLE_BASIC_01;
+				move_state = Charactor_State::GRAB_LOW;
 				is_carrying = false;
+
+				if(carrying_item != nullptr)
+				{
+					carrying_item->is_be_holding = false;
+					carrying_item->reset_pos_data(position, forward.rotateY(-M_PI / 2), right.rotateY(-M_PI / 2));
+					carrying_item = nullptr;
+				}
 			}
 		}
 
@@ -411,12 +601,9 @@ public:
 	}
 
 
-
-
-
-	void draw(Core* core, Window* wnd, float dt)
+	void draw(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs)
 	{
-		update(core, wnd, dt);
+		update(core, wnd, dt, npcs);
 		float ani_dt =  dt * current_animation_speed;
 		farmer.draw(core, world_matrix, camera->view_projection, ani_dt, move_state_helper[move_state]);
 		// update hitbox pos

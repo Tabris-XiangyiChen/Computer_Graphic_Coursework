@@ -177,6 +177,38 @@ public:
 			pVec.v[0] * v[1] - pVec.v[1] * v[0]);
 	}
 
+	Vec3 rotateX(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x,
+			y * cosA - z * sinA,
+			y * sinA + z * cosA
+		);
+	}
+
+	// 3. 绕Y轴旋转（俯仰角，向上看为正，向下看为负）
+	Vec3 rotateY(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x * cosA + z * sinA,
+			y,
+			-x * sinA + z * cosA
+		);
+	}
+
+	// 4. 绕Z轴旋转（偏航角，向右转为正，向左转为负）
+	Vec3 rotateZ(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x * cosA - y * sinA,
+			x * sinA + y * cosA,
+			z
+		);
+	}
+
 	float Max() const
 	{
 		return max(x, max(y, z));
