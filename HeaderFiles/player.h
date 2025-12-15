@@ -108,27 +108,19 @@ public:
 	Charactor_State_Helper move_state_helper;
 	float current_animation_speed = 1.0f;
 
+	bool is_carrying = false;
+	bool is_doing_action = false;   // is attacking / grabing
+	float action_timer = 0.0f;
+
+	Object_Animation* carrying_object;
+
 	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos,Texture_Manager* textures, Camera* cam)
 	{
 		farmer.init(core, shader_manager, psos, textures, name);
-		//std::cout << farmer.hitbox.getMax().get_string() << farmer.hitbox.getMin().get_string() << std::endl;
-		
-		// 调试信息
-		//Vec3 min = farmer.hitbox.getMin();
-		//Vec3 max = farmer.hitbox.getMax();
-		//Vec3 center = farmer.hitbox.get_center();
-		//Vec3 size = max - min;
-
-		//std::cout << "Model bounding box:" << std::endl;
-		//std::cout << "  Min: " << min.get_string() << std::endl;
-		//std::cout << "  Max: " << max.get_string() << std::endl;
-		//std::cout << "  Center: " << center.get_string() << std::endl;
-		//std::cout << "  Size: " << size.get_string() << std::endl;
-
-		//float ground_offset = -min.z;  // 应该是 18.77
-
-		//float x_offset = -center.x;
-		//float y_offset = -center.y;
+		std::cout << farmer.hitbox.local_aabb.getMax().get_string() << farmer.hitbox.local_aabb.getMin().get_string() << std::endl;
+		farmer.hitbox.local_aabb.m_min.x = -40.0f;
+		farmer.hitbox.local_aabb.m_max.x = 40.0f;
+		farmer.init_hitbox(core, shader_manager, psos, true);
 
 		// 设置位置，使模型站在原点，面朝Y轴正方向
 		//position = Vec3(x_offset, y_offset, ground_offset);
@@ -193,27 +185,16 @@ public:
 
 	void update(Core* core, Window* wnd, float dt)
 	{
-		update_movement(wnd, dt);
-		//std::cout << position.get_string() << std::endl;
+		handle_action_input(wnd);
+		update_action(dt);
 
-		// 调试：显示相机信息
-		//static int frame = 0;
-		//if (frame < 10)  // 只显示前10帧
-		//{
-		//	std::cout << "Frame " << frame << ":" << std::endl;
-		//	std::cout << "  Camera pos: " << camera->position.get_string() << std::endl;
-		//	std::cout << "  Camera target: " << camera->target.get_string() << std::endl;
-		//	std::cout << "  Camera forward: " << camera->forward.get_string() << std::endl;
+		
+		// movement is only permitted when no action is being performed.
+		if (!is_doing_action)
+		{
+			update_movement(wnd, dt);
+		}
 
-		//	// 计算模型的实际世界位置
-		//	Vec3 world_min = position + farmer.hitbox.getMin();
-		//	Vec3 world_max = position + farmer.hitbox.getMax();
-		//	Vec3 world_center = (world_min + world_max) * 0.5f;
-		//	std::cout << "  Model world center: " << world_center.get_string() << std::endl;
-		//	std::cout << "  Model feet (min Z): " << world_min.z << std::endl;
-
-		//	frame++;
-		//}
 
 		third_cam.update(wnd, dt);
 
@@ -224,7 +205,7 @@ public:
 	{
 		float s = speed * dt;
 		Vec3 move_dir(0, 0, 0);
-		move_state = Charactor_State::IDLE_BASIC_01;
+		move_state = is_carrying ? Charactor_State::IDLE_WHELL_BARROW : Charactor_State::IDLE_BASIC_01;
 
 		// 获取相机在地面平面上的方向
 		Vec3 cam_forward_flat = camera->get_forward_flat();
@@ -248,6 +229,7 @@ public:
 			move_dir = move_dir + cam_right_flat;
 		}
 
+
 		bool is_moving = move_dir.length() > 0.001f;
 		bool is_running = window->keys[VK_SHIFT];
 
@@ -261,8 +243,11 @@ public:
 			}
 			else
 			{
-				move_state = Charactor_State::WALK;
-				speed = 100.0f;
+				move_state = is_carrying
+					? Charactor_State::WALK_CARRY
+					: Charactor_State::WALK;
+
+				speed = is_carrying ? 70.0f : 100.0f;
 			}
 			move_dir = move_dir.Normalize();
 
@@ -311,10 +296,58 @@ public:
 		update_world_matrix();
 	}
 
+	void update_action(float dt)
+	{
+		if (!is_doing_action)
+			return;
+
+		action_timer -= dt;
+		if (action_timer <= 0.0f)
+		{
+			is_doing_action = false;
+
+			// 动作结束后的状态
+			if (is_carrying)
+				move_state = Charactor_State::IDLE_WHELL_BARROW;
+			else
+				move_state = Charactor_State::IDLE_BASIC_01;
+		}
+	}
+
+	void handle_action_input(Window* window)
+	{
+		if (is_doing_action)
+			return;
+
+		// 攻击（左键）
+		if (window->mouseButtons[0])
+		{
+			is_doing_action = true;
+			action_timer = 1.6f;
+
+			move_state = Charactor_State::ATTACK_A;
+			return;
+		}
+
+		// 拾取（E）
+		if (window->keys['E'] && !is_carrying)
+		{
+			is_doing_action = true;
+			action_timer = 2.5f;
+
+			move_state = Charactor_State::GRAB_LOW;
+			is_carrying = true;
+			return;
+		}
+	}
+
+
 	void draw(Core* core, Window* wnd, float dt)
 	{
 		update(core, wnd, dt);
 		farmer.draw(core, world_matrix, camera->view_projection, dt, move_state_helper[move_state]);
+		// update hitbox pos
+		farmer.hitbox.update_from_world(hitbox_world_matrix);
 		farmer.hitbox.draw(core, hitbox_world_matrix, camera->view_projection);
 	}
 

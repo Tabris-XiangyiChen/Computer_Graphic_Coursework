@@ -31,6 +31,7 @@ public:
 
 	std::string vs_name = "VS_Static";
 	std::string ps_name = "PS_OnlyALB";
+	//std::string ps_name = "PS";
 	std::string pso_name = "StaticModel_OnlyALB_PSO";
 
 	std::string textureFilename;
@@ -48,16 +49,16 @@ public:
 		v.tv = tv;
 		return v;
 	}
-	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures)
+	void init(Core* core, PSOManager* _psos, Shader_Manager* _shader_manager, Texture_Manager* _textures, std::string filename)
 	{
 		shader_manager = _shader_manager;
 		psos = _psos;
 		textures = _textures;
 		std::vector<STATIC_VERTEX> vertices;
-		vertices.push_back(addVertex(Vec3(-1000, 0, -1000), Vec3(0, 1000, 0), 0, 0));
-		vertices.push_back(addVertex(Vec3(1000, 0, -1000), Vec3(0, 1000, 0), 1, 0));
-		vertices.push_back(addVertex(Vec3(-1000, 0, 1000), Vec3(0, 1000, 0), 0, 1));
-		vertices.push_back(addVertex(Vec3(1000, 0, 1000), Vec3(0, 1000, 0), 1, 1));
+		vertices.push_back(addVertex(Vec3(-1000, 0, -1000), Vec3(0, 1, 0), 0, 0));
+		vertices.push_back(addVertex(Vec3(1000, 0, -1000), Vec3(0, 1, 0), 1, 0));
+		vertices.push_back(addVertex(Vec3(-1000, 0, 1000), Vec3(0, 1, 0), 0, 1));
+		vertices.push_back(addVertex(Vec3(1000, 0, 1000), Vec3(0, 1, 0), 1, 1));
 		std::vector<unsigned int> indices;
 		indices.push_back(0);
 		indices.push_back(1);
@@ -72,10 +73,21 @@ public:
 		name = "StaticModelUntextured";
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
 
-		std::string tex_root_ALB = "Models/Textures/bark05_ALB.png";
-		textureFilename = tex_root_ALB;
+		//std::string tex_root_alb = "Models/Textures/bark05_ALB.png";
+		//std::string tex_root_alb = "Models/Textures/brown_mud_leaves_alb.png";
+		std::string tex_root_alb = "Models/Textures/" + filename + ".png";
+		//std::string tex_root_nh = "Models/Textures/brown_mud_leaves_nh.png";
+		//std::string tex_root_rmax = "Models/Textures/brown_mud_leaves_rmax.png";
+		textureFilename = tex_root_alb;
 		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-		textures->load_onlyALB(core, tex_root_ALB, tex_root_ALB);
+		textures->load_onlyALB(core, tex_root_alb, tex_root_alb);
+		// 
+		//std::vector<std::string> filenames;
+		//filenames.push_back(tex_root_alb);
+		//filenames.push_back(tex_root_nh);
+		//filenames.push_back(tex_root_rmax);
+		// load 3 textures in the same matrial.
+		//textures->load(core, tex_root_alb, filenames);
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
@@ -311,7 +323,7 @@ public:
 	Texture_Manager* textures;
 	//Texture_Manager2* textures2;
 
-	AABB hitbox;
+	HitBox hitbox;
 
 	void init_meshes(Core* core, std::string filename)
 	{
@@ -328,7 +340,7 @@ public:
 				STATIC_VERTEX v;
 				memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
 				vertices.push_back(v);
-				hitbox.expand(v.pos);
+				hitbox.local_aabb.expand(v.pos);
 			}
 
 			//get all three textures file roots,
@@ -349,7 +361,7 @@ public:
 			mesh->init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
-		hitbox.update_cache();
+		hitbox.local_aabb.update_cache();
 	}
 
 	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
@@ -362,6 +374,15 @@ public:
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStaticLayout());
+		
+	}
+
+	void init_hitbox(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, bool ifdraw)
+	{
+		if (ifdraw)
+			hitbox.init_withmesh(core, shader_manager, psos, hitbox.local_aabb);
+		else
+			hitbox.init(core, hitbox.local_aabb);
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
@@ -420,7 +441,7 @@ public:
 	Texture_Manager* textures;
 	//Texture_Manager2* textures2;
 
-	AABB hitbox;
+	HitBox hitbox;
 
 	void create_matixes()
 	{
@@ -450,7 +471,7 @@ public:
 				STATIC_VERTEX v;
 				memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
 				vertices.push_back(v);
-				hitbox.expand(v.pos);
+				hitbox.local_aabb.expand(v.pos);
 			}
 
 			//get all three textures file roots,
@@ -471,7 +492,7 @@ public:
 			mesh->init(core, vertices, gemmeshes[i].indices, instances_matix);
 			meshes.push_back(mesh);
 		}
-		hitbox.update_cache();
+		hitbox.local_aabb.update_cache();
 	}
 
 	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
@@ -484,6 +505,14 @@ public:
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStatictLayoutInstanced());
+	}
+
+	void init_hitbox(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, bool ifdraw)
+	{
+		if (ifdraw)
+			hitbox.init_withmesh(core, shader_manager, psos, hitbox.local_aabb);
+		else
+			hitbox.init(core, hitbox.local_aabb);
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
@@ -625,20 +654,21 @@ public:
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->find(vs_name)->shader, shader_manager->find(ps_name)->shader, VertexLayoutCache::getAnimatedLayout());
-		
-		hitbox.init(core, shader_manager, psos, hitbox.local_aabb);
+	
+	}
+
+	void init_hitbox(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, bool ifdraw)
+	{
+		if (ifdraw)
+			hitbox.init_withmesh(core, shader_manager, psos, hitbox.local_aabb);
+		else
+			hitbox.init(core, hitbox.local_aabb);
 	}
 
 	void updateWorld( Matrix& w)
 	{
 		shader_manager->update(vs_name, "animatedMeshBuffer", "W", &w);
 	}
-
-	//void update_hitbox(Matrix planeWorld)
-	//{
-	//	hitbox = hitbox.transform(planeWorld);
-	//	hitbox.update_cache();
-	//}
 
 	void update_animation_instance(AnimationInstance* ani_in, float dt, std::string move)
 	{

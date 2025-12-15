@@ -192,6 +192,10 @@ public:
 		return "{" + std::to_string(v[0]) + ", " + std::to_string(v[1]) + ", " + std::to_string(v[2]) + "}";
 	}
 
+	float operator[] (unsigned int index)
+	{
+		return v[index];
+	}
 };
 
 //4 dimention vector

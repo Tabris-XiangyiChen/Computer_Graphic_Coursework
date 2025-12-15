@@ -2,15 +2,22 @@
 #include "core.h"
 #include "vectors.h"
 
+struct CollisionResult
+{
+	bool hit = false;
+	Vec3 normal;     // 推开的方向
+	float depth = 0; // 推开的距离
+};
+
+
 class AABB {
-private:
+public:
 	Vec3 m_min;
 	Vec3 m_max;
 	Vec3 m_center;      // 缓存中心点
 	Vec3 m_halfSize;    // 缓存半长
 	bool m_dirty;       // 脏标记
 
-public:
 	AABB() : m_min(FLT_MAX, FLT_MAX, FLT_MAX),
 		m_max(-FLT_MAX, -FLT_MAX, -FLT_MAX),
 		m_dirty(true) {
@@ -107,12 +114,106 @@ public:
 		return result;
 	}
 
-	//static bool intersect(const AABB& a, const AABB& b)
-	//{
-	//	return (a.m_min <= b.max.x && a.max.x >= b.min.x) &&
-	//		(a.min.y <= b.max.y && a.max.y >= b.min.y) &&
-	//		(a.min.z <= b.max.z && a.max.z >= b.min.z);
-	//}
+	inline static bool AABB_Intersect(const AABB& a, const AABB& b)
+	{
+		// is it separated on the x-axis?
+		if (a.m_max.x < b.m_min.x || a.m_min.x > b.m_max.x)
+			return false;
+
+		if (a.m_max.y < b.m_min.y || a.m_min.y > b.m_max.y)
+			return false;
+
+		if (a.m_max.z < b.m_min.z || a.m_min.z > b.m_max.z)
+			return false;
+
+		return true;
+	}
+
+	inline static bool Point_In_AABB(const Vec3& p, const AABB& box)
+	{
+		return (p.x >= box.m_min.x && p.x <= box.m_max.x) &&
+			(p.y >= box.m_min.y && p.y <= box.m_max.y) &&
+			(p.z >= box.m_min.z && p.z <= box.m_max.z);
+	}
+
+	static CollisionResult AABB_Intersect_Depth(const AABB& a, const AABB& b)
+	{
+		CollisionResult result;
+
+		// 中心点差
+		Vec3 delta = b.m_center - a.m_center;
+
+		// 各轴重叠量
+		float overlapX = a.m_halfSize.x + b.m_halfSize.x - std::abs(delta.x);
+		if (overlapX <= 0) return result;
+
+		float overlapY = a.m_halfSize.y + b.m_halfSize.y - std::abs(delta.y);
+		if (overlapY <= 0) return result;
+
+		float overlapZ = a.m_halfSize.z + b.m_halfSize.z - std::abs(delta.z);
+		if (overlapZ <= 0) return result;
+
+		// 找最小穿透轴
+		result.hit = true;
+		result.depth = overlapX;
+		result.normal = Vec3((delta.x > 0) ? -1.f : 1.f, 0, 0);
+
+		if (overlapY < result.depth)
+		{
+			result.depth = overlapY;
+			result.normal = Vec3(0, (delta.y > 0) ? -1.f : 1.f, 0);
+		}
+
+		if (overlapZ < result.depth)
+		{
+			result.depth = overlapZ;
+			result.normal = Vec3(0, 0, (delta.z > 0) ? -1.f : 1.f);
+		}
+
+		return result;
+	}
+
+
+	static bool Ray_Intersect_AABB(
+		const Vec3& rayOrigin,
+		const Vec3& rayDir,
+		const AABB& box,
+		float& tMinOut)
+	{
+		float tMin = 0.0f;
+		float tMax = FLT_MAX;
+
+		for (unsigned int i = 0; i < 3; i++)
+		{
+			float origin = rayOrigin.v[i];
+			float dir = rayDir.v[i];
+			float minB = box.m_min.v[i];
+			float maxB = box.m_max.v[i];
+
+			if (std::abs(dir) < 1e-6f)
+			{
+				if (origin < minB || origin > maxB)
+					return false;
+			}
+			else
+			{
+				float ood = 1.0f / dir;
+				float t1 = (minB - origin) * ood;
+				float t2 = (maxB - origin) * ood;
+
+				if (t1 > t2) std::swap(t1, t2);
+				tMin = max(tMin, t1);
+				tMax = min(tMax, t2);
+
+				if (tMin > tMax)
+					return false;
+			}
+		}
+
+		tMinOut = tMin;
+		return true;
+	}
+
 };
 
 
@@ -122,6 +223,7 @@ public:
 	AABB local_aabb;
 	AABB world_aabb;
 
+	bool ifdraw;
 	Mesh mesh;
 	Shader_Manager* shader_manager = nullptr;
 	PSOManager* psos = nullptr;
@@ -131,17 +233,14 @@ public:
 	std::string pso_name = "Line_PSO";
 
 public:
-	// 初始化（一次）
-	void init(Core* core,
-		Shader_Manager* _shader_manager,
-		PSOManager* _psos,
-		const AABB& aabb)
+
+	void init_withmesh(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, const AABB& aabb)
 	{
+		ifdraw = true;
 		shader_manager = _shader_manager;
 		psos = _psos;
 		local_aabb = aabb;
 
-		// 先创建一个“空 mesh”
 		build_mesh_from_aabb(core, local_aabb);
 
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
@@ -154,6 +253,12 @@ public:
 			shader_manager->shaders[ps_name].shader,
 			VertexLayoutCache::getStaticLineLayout()
 		);
+	}
+	void init(Core* core, const AABB& aabb)
+	{
+		ifdraw = false;
+		local_aabb = aabb;
+
 	}
 
 	void build_mesh_from_aabb(Core* core, const AABB& aabb)
@@ -193,7 +298,9 @@ public:
 
 	void draw(Core* core, Matrix& world, Matrix& vp)
 	{
-		update_from_world(world);
+		if (!ifdraw)
+			return;
+
 		update(world, vp);
 
 		core->beginRenderPass();

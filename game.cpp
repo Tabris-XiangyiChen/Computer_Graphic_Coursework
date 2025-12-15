@@ -44,9 +44,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//fam.init(&core, &sm, &psos, &tm,"Farmer-male");
 
 	Plane plane;
-	plane.init(&core, &psos, &sm, &tm);
+	plane.init(&core, &psos, &sm, &tm, "brown_mud_leaves_alb");
 	Sphere sphere;
-	sphere.init(&core, &psos, &sm, &tm, "autumn_field_2k");
+	sphere.init(&core, &psos, &sm, &tm, "sunny_rose_garden");
 	 
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
