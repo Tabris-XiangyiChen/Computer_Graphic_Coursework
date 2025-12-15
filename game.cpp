@@ -7,6 +7,7 @@
 #include "HeaderFiles/model.h"
 #include "HeaderFiles/camera.h"
 #include "HeaderFiles/player.h"
+#include "HeaderFiles/npcs.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -61,6 +62,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Main_Charactor farmer;
 	farmer.init(&core, &sm, &psos, &tm, &camera_);
 
+	AnimalNPC bull;
+	bull.init_data();
+	bull.init(&core, &sm, &psos, &tm, "Bull-dark");
+	bull.set_target(&farmer);
 	float time = 0;
 	//std::cout << "out" << std::endl;
 	while (1) {
@@ -101,6 +106,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		//farmer.update(&core, &win, dt);
 		farmer.draw(&core, &win, dt);
+		bull.draw(&core, camera_.view_projection, dt);
 
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
 		//fam.draw(&core);

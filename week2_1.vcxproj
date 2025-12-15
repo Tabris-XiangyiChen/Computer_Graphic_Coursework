@@ -202,6 +202,7 @@
     <ClInclude Include="HeaderFiles\GEMLoader.h" />
     <ClInclude Include="HeaderFiles\mesh.h" />
     <ClInclude Include="HeaderFiles\model.h" />
+    <ClInclude Include="HeaderFiles\npcs.h" />
     <ClInclude Include="HeaderFiles\object_manager.h" />
     <ClInclude Include="HeaderFiles\pipline.h" />
     <ClInclude Include="HeaderFiles\player.h" />

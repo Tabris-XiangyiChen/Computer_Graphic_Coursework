@@ -117,7 +117,7 @@ public:
 	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos,Texture_Manager* textures, Camera* cam)
 	{
 		farmer.init(core, shader_manager, psos, textures, name);
-		std::cout << farmer.hitbox.local_aabb.getMax().get_string() << farmer.hitbox.local_aabb.getMin().get_string() << std::endl;
+		//std::cout << farmer.hitbox.local_aabb.getMax().get_string() << farmer.hitbox.local_aabb.getMin().get_string() << std::endl;
 		farmer.hitbox.local_aabb.m_min.x = -40.0f;
 		farmer.hitbox.local_aabb.m_max.x = 40.0f;
 		farmer.init_hitbox(core, shader_manager, psos, true);
@@ -140,23 +140,6 @@ public:
 
 
 	}
-
-	//void get_world_matrix()
-	//{
-	//	Matrix T = Matrix::Translate(position);
-
-	//	Vec3 world_up = Vec3(0, 0, 1);
-
-	//	Vec3 right = world_up.Cross(forward).Normalize();
-	//	Vec3 up = forward.Cross(right).Normalize();
-
-	//	Matrix R;
-	//	R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
-	//	R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
-	//	R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
-
-	//	world_matrix =  T.mul(R).Rotate_Y(M_PI / 2);
-	//}
 
 	void update_world_matrix()
 	{
@@ -186,8 +169,11 @@ public:
 	void update(Core* core, Window* wnd, float dt)
 	{
 		handle_action_input(wnd);
-		update_action(dt);
 
+		//handle_attack_input(wnd, enemies);
+		//handle_pickup_input(wnd, items);
+
+		update_action(dt);
 		
 		// movement is only permitted when no action is being performed.
 		if (!is_doing_action)
@@ -197,8 +183,6 @@ public:
 
 
 		third_cam.update(wnd, dt);
-
-		//farmer.update(world_matrix, camera->view_projection, dt, move_state_helper[move_state]);
 	}
 
 	void update_movement(Window* window, float dt)
@@ -250,21 +234,6 @@ public:
 				speed = is_carrying ? 70.0f : 100.0f;
 			}
 			move_dir = move_dir.Normalize();
-
-			//// 平滑转向：让角色逐渐转向移动方向
-			//Vec3 target_forward = move_dir;
-			//target_forward.y = 0;  // 保持在地面平面
-			//if (target_forward.length() > 0.001f)
-			//{
-			//	target_forward = target_forward.Normalize();
-
-			//	// 平滑插值当前朝向到目标朝向
-			//	float turn_amount = turn_speed * dt;
-			//	forward = lerp(forward, target_forward, turn_amount).Normalize();
-
-			//	// 重新计算右方向和上方向
-			//	right = up.Cross(forward).Normalize();
-			//}
 
 			Vec3 current_forward = forward;
 			Vec3 target_forward = move_dir;
@@ -323,7 +292,6 @@ public:
 		if (is_doing_action)
 			return;
 
-		// 攻击（左键）
 		if (window->mouseButtons[0])
 		{
 			is_doing_action = true;
@@ -335,7 +303,6 @@ public:
 			return;
 		}
 
-		// 拾取（E）
 		if (window->keys['E'] && !is_carrying)
 		{
 			is_doing_action = true;
@@ -348,6 +315,103 @@ public:
 			return;
 		}
 	}
+
+	AABB make_attack_aabb(float range = 60.0f)
+	{
+		AABB atk;
+		Vec3 center = farmer.hitbox.world_aabb.get_center();
+
+		Vec3 forward_offset = forward * range;
+
+		atk.m_min = center + forward_offset - Vec3(30, 30, 30);
+		atk.m_max = center + forward_offset + Vec3(30, 30, 30);
+		atk.update_cache();
+
+		return atk;
+	}
+
+	bool try_attack(const std::vector<AABB*>& enemies)
+	{
+		AABB attack_box = make_attack_aabb();
+
+		for (AABB* enemy : enemies)
+		{
+			if (attack_box.intersects(*enemy))
+			{
+				// TODO: enemy->take_damage();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void handle_attack_input(Window* window,
+		const std::vector<AABB*>& enemies)
+	{
+		if (is_doing_action)
+			return;
+
+		if (window->mouseButtons[0])
+		{
+			is_doing_action = true;
+			action_timer = 0.6f;
+			move_state = Charactor_State::ATTACK_A;
+
+			try_attack(enemies); // ⭐ 这里做一次判定
+		}
+	}
+
+
+	bool try_pickup(const std::vector<AABB*>& items)
+	{
+		AABB pickup_box = farmer.hitbox.world_aabb;
+
+		for (AABB* item : items)
+		{
+			if (pickup_box.intersects(*item))
+			{
+				// TODO: 绑定物体到角色（先只标记）
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void handle_pickup_input(Window* window, const std::vector<AABB*>& items)
+	{
+		static bool lastE = false;
+		bool nowE = window->keys['E'];
+
+		if (nowE && !lastE && !is_doing_action)
+		{
+			// 当前没拿东西 → 尝试拾取
+			if (!is_carrying)
+			{
+				if (try_pickup(items))
+				{
+					is_doing_action = true;
+					action_timer = 0.8f;
+
+					move_state = Charactor_State::GRAB_LOW;
+					is_carrying = true;
+				}
+			}
+			// 当前拿着 → 放下
+			else
+			{
+				is_doing_action = true;
+				action_timer = 0.5f;
+
+				move_state = Charactor_State::IDLE_BASIC_01;
+				is_carrying = false;
+			}
+		}
+
+		lastE = nowE;
+	}
+
+
+
 
 
 	void draw(Core* core, Window* wnd, float dt)

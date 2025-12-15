@@ -28,7 +28,7 @@ public:
 public:
 
     Camera() :
-        position(Vec3(0, 0, 0)),
+        position(Vec3(0, 0, 10)),
         target(Vec3(0, 0, 1)),
         up(Vec3(0, 1, 0)),
         forward(Vec3(0, 0, 1)),
