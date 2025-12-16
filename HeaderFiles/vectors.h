@@ -732,6 +732,14 @@ public:
 		mat.m[10] = v.z;
 		return mat;
 	}
+	static Matrix Scaling(const float v)
+	{
+		Matrix mat;
+		mat.m[0] = v;
+		mat.m[5] = v;
+		mat.m[10] = v;
+		return mat;
+	}
 
 	Matrix mul(const Matrix& matrix) const
 	{

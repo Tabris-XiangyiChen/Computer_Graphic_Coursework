@@ -9,6 +9,7 @@
 #include "animation.h"
 #include "textureloader.h"
 #include "AABB.h"
+#include "loadfiles.h"
 
 static STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 {
@@ -407,7 +408,8 @@ public:
 		}
 	}
 
-	void draw(Core* core) {
+	void draw(Core* core, Matrix planeWorld, Matrix vp) {
+		update(planeWorld, vp);
 		core->beginRenderPass();
 		apply(core);
 		psos->bind(core, pso_name);
@@ -448,15 +450,45 @@ public:
 		for (unsigned int i = 0; i < 5; i++)
 		{
 			INSTANCE matrix;
-			matrix.w = Matrix();
-			matrix.w.m[3] = i * 10;
+			matrix.w = generate_random_grass_matrix(Vec3(0,0,0),1000.0f, 1000.0f );
 			instances_matix.push_back(matrix);
 		}
 	}
 
+	Matrix generate_random_grass_matrix(
+		const Vec3& center, 
+		float range_x,
+		float range_z,
+		float min_scale = 0.8f,
+		float max_scale = 1.2f)
+	{
+
+		float rx = random_float(-range_x, range_x);
+		float rz = random_float(-range_z, range_z);
+
+		Vec3 pos = {
+			center.x + rx,
+			center.y,
+			center.z + rz
+		};
+
+		float angle = random_float(0.0f, 2.0f * M_PI);
+		Matrix R = Matrix::rotateY(angle);
+
+		float s = random_float(min_scale, max_scale);
+		Matrix S = Matrix::Scaling(s);
+
+		Matrix T = Matrix::Translate(pos);
+
+		return T.mul(S).mul(R);
+	}
+
+
 	void init_meshes(Core* core, std::string filename)
 	{
-		create_matixes();
+		//create_matixes();
+		//save_instance_matrices(FILE_NAME_FLOWER_MATRIX, instances_matix);
+		load_instance_matrices(FILE_NAME_FLOWER_MATRIX, instances_matix);
 		
 		GEMLoader::GEMModelLoader loader;
 		std::vector<GEMLoader::GEMMesh> gemmeshes;
@@ -515,10 +547,14 @@ public:
 			hitbox.init(core, hitbox.local_aabb);
 	}
 
-	void update(Matrix planeWorld, Matrix vp) {
-		shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+	void update( Matrix vp) {
+		//shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
 		shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
 	}
+	//void update(Matrix planeWorld, Matrix vp) {
+	//	shader_manager->update(vs_name, "staticMeshBuffer", "W", &planeWorld);
+	//	shader_manager->update(vs_name, "staticMeshBuffer", "VP", &vp);
+	//}
 
 	void apply(Core* core)
 	{
@@ -537,7 +573,9 @@ public:
 		}
 	}
 
-	void draw(Core* core) {
+	void draw(Core* core, Matrix& vp)
+	{
+		update(vp);
 		core->beginRenderPass();
 		apply(core);
 		psos->bind(core, pso_name);

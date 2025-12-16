@@ -200,6 +200,8 @@
     <ClInclude Include="HeaderFiles\debug.h" />
     <ClInclude Include="HeaderFiles\GamesEngineeringBase.h" />
     <ClInclude Include="HeaderFiles\GEMLoader.h" />
+    <ClInclude Include="HeaderFiles\loadfiles.h" />
+    <ClInclude Include="HeaderFiles\map_item.h" />
     <ClInclude Include="HeaderFiles\mesh.h" />
     <ClInclude Include="HeaderFiles\model.h" />
     <ClInclude Include="HeaderFiles\npcs.h" />

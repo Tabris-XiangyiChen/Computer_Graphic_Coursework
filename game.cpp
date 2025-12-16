@@ -8,6 +8,7 @@
 #include "HeaderFiles/camera.h"
 #include "HeaderFiles/player.h"
 #include "HeaderFiles/npcs.h"
+#include "HeaderFiles/map_item.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -32,8 +33,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSOManager psos;
 	Texture_Manager tm;
 
-	Object tree;
-	tree.init(&core, &sm, &psos, &tm, "acacia");
+	//Object tree;
+	//tree.init(&core, &sm, &psos, &tm, "acacia");
 
 	Object_Instance flower;
 	//Object flower;
@@ -72,6 +73,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	std::vector<NPC_Base*> npc_vec;
 	npc_vec.push_back(&bull);
 
+	Item_Ins_Base grass;
+	grass.init(&core, &sm, &psos, &tm, "acacia", FILE_NAME_FLOWER_MATRIX);
+
 	while (1) {
 		float dt = timer.dt();
 
@@ -99,11 +103,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		plane.draw(&core, world, camera_.view_projection);
 		sphere.draw(&core, world, camera_.view_projection);
 
-		tree.update(world, camera_.view_projection);
-		tree.draw(&core);
+		//tree.update(world, camera_.view_projection);
+		//tree.draw(&core);
 
-		flower.update(world, camera_.view_projection);
-		flower.draw(&core);
+		//flower.update(world, camera_.view_projection);
+		flower.draw(&core, camera_.view_projection);
 
 		//trex.update(world, camera_.view_projection, dt, "attack");
 		trex.draw(&core, world, camera_.view_projection, dt, "attack");
@@ -112,6 +116,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		farmer.draw(&core, &win, dt, npc_vec);
 		bull.draw(&core, camera_.view_projection, dt);
 
+		grass.draw(&core, camera_.view_projection);
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
 		//fam.draw(&core);
 
