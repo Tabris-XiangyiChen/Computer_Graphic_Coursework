@@ -172,8 +172,8 @@ public:
 	std::string name;
 	Main_Charactor* target = nullptr;
 
-	float vision_range = 300.0f;
-	float attack_range = 100.0f;
+	float vision_range = 500.0f;
+	float attack_range = 200.0f;
 	Matrix model_adjust;
 	float time;
 
@@ -214,22 +214,39 @@ public:
 			R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
 			R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
 
-			Matrix handle_m = Matrix::rotateZ(M_PI / 2);
+			//Matrix handle_m = Matrix::rotateZ(M_PI / 2);
 
 			hitbox_world_matrix = T.mul(R).mul(model_adjust);
 			world_matrix = T.mul(R).mul(model_adjust);
 		}
 	}
 
-	void update(float dt)
+	Matrix return_next_world_matrix(Vec3& next_position)
+	{
+		Matrix T = Matrix::Translate(next_position);
+		Matrix R;
+		R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
+		R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
+		R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
+
+		Matrix handle_m = Matrix::rotateZ(M_PI / 2);
+
+		Matrix model_adjust = Matrix::rotateX(-M_PI / 2);
+
+
+		return T.mul(R).mul(model_adjust);
+		//world_matrix = T.mul(R).mul(model_adjust);
+	}
+
+	void update(float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
 
-		update_ai(dt);
+		update_ai(dt, item_vec);
 
 		update_world_matrix();
 	}
 
-	virtual void update_ai(float dt)
+	virtual void update_ai(float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
 		if (!target) return;
 		if (is_dead)
@@ -257,7 +274,7 @@ public:
 		}
 		else if (dist < vision_range)
 		{
-			chase_target(dt);
+			chase_target(dt, item_vec);
 		}
 		else
 		{
@@ -265,9 +282,9 @@ public:
 		}
 	}
 
-	void draw(Core* core, Matrix& vp, float dt)
+	void draw(Core* core, Matrix& vp, float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
-		update(dt);
+		update(dt, item_vec);
 		float ani_dt = dt * current_animation_speed;
 		model.draw(core, world_matrix, vp, ani_dt, state_helper[move_state]);
 
@@ -281,7 +298,7 @@ public:
 		target = _target;
 	}
 private:
-	void chase_target(float dt)
+	void chase_target(float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
 		is_doing_action = false;
 		move_state = NPC_State::RUN_FORWARD;
@@ -294,7 +311,7 @@ private:
 
 		move_dir = move_dir.Normalize();
 
-		// ===== 1. 计算转向角 =====
+		// caculate trun angle
 		Vec3 current_forward = forward;
 		Vec3 target_forward = move_dir;
 
@@ -303,14 +320,20 @@ private:
 		float max_turn = turn_speed * dt;
 		angle = clamp(angle, -max_turn, max_turn);
 
-		// ===== 2. 旋转朝向 =====
 		forward = Matrix::rotateY(angle).mulVec(forward).Normalize();
 		right = up.Cross(forward).Normalize();
 
-		// ===== 3. 前进（用 move_dir，不是 forward）=====
-		if (fabs(angle) < 0.2f)   // ~11°
+		Vec3 next_pos = position + move_dir * speed * dt;
+		AABB next_aabb = model.hitbox.local_aabb;
+		next_aabb = next_aabb.transform(return_next_world_matrix(next_pos));
+
+		if (!check_map_collision(next_aabb, item_vec))
 		{
-			position += move_dir * speed * dt;
+			// make it slow down when turning
+			if (fabs(angle) < 0.2f)
+			{
+				position += move_dir * speed * dt;
+			}
 		}
 
 	}

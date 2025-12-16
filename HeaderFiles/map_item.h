@@ -31,6 +31,31 @@ public:
 
 	}
 
+	bool collide(const AABB& aabb) const
+	{
+		for (const auto& w : world_hitboxs)
+		{
+			if (aabb.intersects_toother(w))
+				return true;
+		}
+		return false;
+	}
+
+	static bool collide_with_map(const AABB& testBox,
+		const std::vector<Item_Ins_Base*>& items)
+	{
+		for (auto item : items)
+		{
+			for (const AABB& test : item->world_hitboxs)
+			{
+				if (testBox.intersects_toother(test))
+					return true;
+			}
+		}
+		return false;
+	}
+
+
 	void draw(Core* core, Matrix& vp)
 	{
 

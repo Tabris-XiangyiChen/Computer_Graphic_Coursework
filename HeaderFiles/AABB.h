@@ -82,6 +82,7 @@ public:
 		return m_halfSize;
 	}
 
+	//will change the self value
 	float get_volume() const {
 		Vec3 size = m_max - m_min;
 		return size.x * size.y * size.z;
@@ -100,6 +101,14 @@ public:
 			Vec3(m_max.x, m_max.y, m_max.z)
 		};
 	}
+
+	void translate(const Vec3& delta)
+	{
+		m_min += delta;
+		m_max += delta;
+		update_cache();
+	}
+
 
 	// transform AABB box
 	AABB transform(const Matrix& transform) const {
@@ -147,10 +156,8 @@ public:
 	{
 		CollisionResult result;
 
-		// 中心点差
 		Vec3 delta = b.m_center - a.m_center;
 
-		// 各轴重叠量
 		float overlapX = a.m_halfSize.x + b.m_halfSize.x - std::abs(delta.x);
 		if (overlapX <= 0) return result;
 

@@ -2,6 +2,7 @@
 #include "model.h"
 #include "camera.h"
 #include <string>
+#include "map_item.h"
 
 enum class NPC_State
 {
@@ -133,7 +134,7 @@ public:
 		right = up.Cross(forward).Normalize();
 	}
 
-	virtual void update(float dt) = 0;
+	virtual void update(float dt, std::vector<Item_Ins_Base*> item_vec) = 0;
 
 	virtual void suffer_attack(float damage)
 	{
@@ -146,6 +147,16 @@ public:
 			health = 0;
 			is_dead = true;
 		}
+	}
+
+	bool check_map_collision(const AABB& next_aabb, const std::vector<Item_Ins_Base*>& items)
+	{
+		for (auto* item : items)
+		{
+			if (item->collide(next_aabb))
+				return true;
+		}
+		return false;
 	}
 
 protected:
@@ -322,15 +333,12 @@ public:
 	void update_world_matrix()
 	{
 		Matrix T = Matrix::Translate(position);
-
-		// 创建朝向矩阵
+		//rotate matrix
 		Matrix R;
 		R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
 		R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
 		R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
 
-		// 由于你的模型可能需要旋转才能正确显示，根据实际情况调整
-		// 这里假设模型需要绕X轴旋转90度
 		Matrix model_adjust = Matrix::rotateX(-M_PI / 2);
 		Matrix zm = Matrix::rotateZ(M_PI);
 
@@ -342,8 +350,23 @@ public:
 		//world_matrix = T;
 	}
 
+	Matrix return_next_world_matrix(Vec3& next_position)
+	{
+		Matrix T = Matrix::Translate(next_position);
+		Matrix R;
+		R.a[0][0] = right.x;   R.a[0][1] = right.y;   R.a[0][2] = right.z;
+		R.a[1][0] = up.x;      R.a[1][1] = up.y;      R.a[1][2] = up.z;
+		R.a[2][0] = forward.x; R.a[2][1] = forward.y; R.a[2][2] = forward.z;
 
-	void update(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs)
+		Matrix model_adjust = Matrix::rotateX(-M_PI / 2);
+		model_adjust = model_adjust.mul(Matrix::rotateZ(M_PI));
+
+		return T.mul(R);
+		//world_matrix = T.mul(R).mul(model_adjust);
+	}
+
+
+	void update(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs, std::vector<Item_Ins_Base*> item_vec)
 	{
 		//handle_action_input(wnd);
 
@@ -355,14 +378,60 @@ public:
 		// movement is only permitted when no action is being performed.
 		if (!is_doing_action)
 		{
-			update_movement(wnd, dt);
+			update_movement(wnd, dt, item_vec);
 		}
 
 
 		third_cam.update(wnd, dt);
 	}
 
-	void update_movement(Window* window, float dt)
+	bool check_map_collision( const AABB& next_aabb, const std::vector<Item_Ins_Base*>& items)
+	{
+		for (auto* item : items)
+		{
+			if (item->collide(next_aabb))
+				return true;
+		}
+		return false;
+	}
+	
+	//try to not stop when collide
+	Vec3 try_move_with_slide( Vec3 position, Vec3& delta, AABB& localAABB, std::vector<Item_Ins_Base*>& items)
+	{
+		Vec3 final_delta = delta;
+
+		AABB worldAABB = localAABB;
+		//worldAABB = worldAABB.transform(Matrix::Translate(position));
+
+		//x forward, if not 0
+		if (final_delta.x != 0)
+		{
+			AABB test = worldAABB;
+			// try move
+			test.translate(Vec3(final_delta.x, 0, 0));
+
+			// try move
+			if (Item_Ins_Base::collide_with_map(test, items))
+				final_delta.x = 0;
+		}
+
+		// z
+		if (final_delta.z != 0)
+		{
+			AABB test = worldAABB;
+			test.translate(Vec3(0, 0, final_delta.z));
+
+			if (Item_Ins_Base::collide_with_map(test, items))
+				final_delta.z = 0;
+		}
+
+		Vec3 new_pos = position + final_delta;
+
+		return new_pos;
+	}
+
+
+	void update_movement(Window* window, float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
 		float s = speed * dt;
 		Vec3 move_dir(0, 0, 0);
@@ -394,7 +463,7 @@ public:
 		bool is_moving = move_dir.length() > 0.001f;
 		bool is_running = window->keys[VK_SHIFT];
 
-		// 如果有移动输入
+		// if move
 		if (is_moving)
 		{
 			if (is_running && !is_carrying)
@@ -422,22 +491,31 @@ public:
 			float max_turn = turn_speed * dt;
 			angle = clamp(angle, -max_turn, max_turn);
 
-			// 绕 Y 轴旋转 forward
+			// rotate by Y
 			forward = Matrix::rotateY(angle).mulVec(forward).Normalize();
 			right = up.Cross(forward).Normalize();
 
-			// 应用移动
-			position = position + move_dir * s;
+			Vec3 next_pos =  position + move_dir * s;
 
-			// 根据移动速度调整动画速度
+			AABB next_aabb = farmer.hitbox.local_aabb;
+			Matrix next_world = return_next_world_matrix(next_pos);
+			next_aabb = next_aabb.transform(next_world);
+
+			bool blocked = check_map_collision(next_aabb, item_vec);
+
+			if (!blocked)
+			{
+				//Vec3 delta = move_dir * s;
+				//position = try_move_with_slide(position, delta, farmer.hitbox.world_aabb, item_vec);
+
+				position = next_pos;
+			}
 			//current_animation_speed = move_dir.length() * 2.0f;
 		}
 		else
 		{
 			//current_animation_speed = 1.0f;
-			move_state = is_carrying
-				? Charactor_State::IDLE_WHEELBARROW
-				: Charactor_State::IDLE_BASIC_01;
+			move_state = is_carrying? Charactor_State::IDLE_WHEELBARROW : Charactor_State::IDLE_BASIC_01;
 			//move_state = Charactor_State::IDLE_BASIC_01;
 		}
 
@@ -456,7 +534,7 @@ public:
 			is_doing_action = false;
 			current_animation_speed = 1.0f;
 
-			// 动作结束后的状态
+			//state after carrying
 			if (is_carrying)
 				move_state = Charactor_State::IDLE_WHEELBARROW;
 			else
@@ -601,9 +679,9 @@ public:
 	}
 
 
-	void draw(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs)
+	void draw(Core* core, Window* wnd, float dt, std::vector<NPC_Base*>& npcs, std::vector<Item_Ins_Base*> items)
 	{
-		update(core, wnd, dt, npcs);
+		update(core, wnd, dt, npcs, items);
 		float ani_dt =  dt * current_animation_speed;
 		farmer.draw(core, world_matrix, camera->view_projection, ani_dt, move_state_helper[move_state]);
 		// update hitbox pos

@@ -148,11 +148,11 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
             Matrix R = Matrix::rotateY(rotY);
             Matrix S = Matrix::Scaling(scale);
 
-            Matrix W = T.mul(S).mul(R).mul(adjust_matrix);   // 行向量：S → R → T
+            Matrix W = T.mul(S).mul(R).mul(adjust_matrix);
             instances.push_back({ W });
         };
 
-    // ===== 前边（+Z）=====
+    // +z
     for (int i = 0; i < countX; ++i)
     {
         float x = -halfW + i * segmentLength + segmentLength * 0.5f;
@@ -160,7 +160,7 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
         addInstance(x, z, 0.0f);
     }
 
-    // ===== 后边（-Z）=====
+    // -z
     for (int i = 0; i < countX; ++i)
     {
         float x = -halfW + i * segmentLength + segmentLength * 0.5f;
@@ -168,7 +168,7 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
         addInstance(x, z, M_PI);
     }
 
-    // ===== 右边（+X）=====
+    // +x
     for (int i = 0; i < countZ; ++i)
     {
         float x = halfW;
@@ -176,7 +176,7 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
         addInstance(x, z, M_PI * 0.5f);
     }
 
-    // ===== 左边（-X）=====
+    // -x
     for (int i = 0; i < countZ; ++i)
     {
         float x = -halfW;

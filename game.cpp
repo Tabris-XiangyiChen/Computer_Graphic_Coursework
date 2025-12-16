@@ -70,11 +70,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	float time = 0;
 	//std::cout << "out" << std::endl;
 
-	std::vector<NPC_Base*> npc_vec;
-	npc_vec.push_back(&bull);
 
 	Item_Ins_Base fence;
 	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX);
+
+	std::vector<NPC_Base*> npc_vec;
+	npc_vec.push_back(&bull);
+	std::vector<Item_Ins_Base*> item_vec;
+	item_vec.push_back(&fence);
 
 	while (1) {
 		float dt = timer.dt();
@@ -113,8 +116,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//trex.draw(&core, world, camera_.view_projection, dt, "attack");
 
 		//farmer.update(&core, &win, dt);
-		farmer.draw(&core, &win, dt, npc_vec);
-		bull.draw(&core, camera_.view_projection, dt);
+		farmer.draw(&core, &win, dt, npc_vec, item_vec);
+		bull.draw(&core, camera_.view_projection, dt, item_vec);
 
 		fence.draw(&core, camera_.view_projection);
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
