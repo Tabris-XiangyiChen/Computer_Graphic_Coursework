@@ -38,7 +38,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	//Object_Instance flower;
 	////Object flower;
-	//flower.init(&core, &sm, &psos, &tm, "flower4");
+	//flower.init(&core, &sm, &psos, &tm, "flower4", true);
 
 	//Object_Animation trex;
 	//trex.init(&core, &sm, &psos, &tm, "Trex");
@@ -72,7 +72,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
 	Item_Ins_Base fence;
-	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX);
+	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX, false);
+	Item_Ins_Base flower;
+	flower.init(&core, &sm, &psos, &tm, "flower4", FILE_NAME_FLOWER_MATRIX, true);
 
 	std::vector<NPC_Base*> npc_vec;
 	npc_vec.push_back(&bull);
@@ -120,6 +122,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		bull.draw(&core, camera_.view_projection, dt, item_vec);
 
 		fence.draw(&core, camera_.view_projection);
+		flower.draw(&core, camera_.view_projection);
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
 		//fam.draw(&core);
 

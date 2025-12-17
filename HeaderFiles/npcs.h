@@ -246,7 +246,7 @@ public:
 		update_world_matrix();
 	}
 
-	virtual void update_ai(float dt, std::vector<Item_Ins_Base*> item_vec)
+	void update_ai(float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
 		if (!target) return;
 		if (is_dead)
@@ -268,17 +268,42 @@ public:
 			std::cout << dist << std::endl;
 			time = 0;
 		}
+
+		// set the is_doing_action back to the origin state
+		update_action(dt);
+
+		if (is_be_attacking)
+		{
+			be_attack();
+			return;
+		}
+
 		if (dist < attack_range && AABB::AABB_Intersect(model.hitbox.world_aabb, target->farmer.hitbox.world_aabb))
 		{
 			do_attack();
+			return;
 		}
-		else if (dist < vision_range)
+
+		if (dist < vision_range)
 		{
 			chase_target(dt, item_vec);
+			return;
 		}
-		else
+
+		standby(dt);
+		
+	}
+
+	void suffer_attack(float damage)
+	{
+		if (health > 0 && !is_dead)
 		{
-			standby(dt);
+			health -= damage;
+		}
+		if (health <= 0)
+		{
+			health = 0;
+			is_dead = true;
 		}
 	}
 
@@ -300,7 +325,9 @@ public:
 private:
 	void chase_target(float dt, std::vector<Item_Ins_Base*> item_vec)
 	{
-		is_doing_action = false;
+		if (is_doing_action) return;
+
+		//is_doing_action = false;
 		move_state = NPC_State::RUN_FORWARD;
 
 		Vec3 move_dir = target->position - position;
@@ -349,7 +376,19 @@ private:
 
 	void standby(float dt)
 	{
+		if (is_doing_action) return;
+
 		move_state = NPC_State::IDLE;
+		current_animation_speed = 1.0f;
 	}
 
+	void be_attack()
+	{
+
+		is_doing_action = true;
+		is_be_attacking = false;
+		action_timer = 0.5f;
+		current_animation_speed = 1.0f;
+		move_state = NPC_State::HITREACT;
+	}
 };

@@ -489,8 +489,20 @@ public:
 		hitbox.local_aabb.update_cache();
 	}
 
-	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename)
+	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename, bool if_VS_ani)
 	{
+		if (if_VS_ani)
+		{
+			vs_name = "VS_Static_Ins_VAni";
+			pso_name = "StaticModel_Trans_Ins_Ani_PSO";
+		}
+		else
+		{
+			vs_name = "VS_Static_Ins";
+			pso_name = "StaticModel_Trans_Ins_PSO";
+		}
+
+		
 		shader_manager = _shader_manager;
 		psos = _psos;
 		textures = _textures;

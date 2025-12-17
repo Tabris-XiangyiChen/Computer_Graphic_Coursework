@@ -10,7 +10,7 @@ public:
 	Matrix model_adjust;
 
 	void init(Core* core, Shader_Manager* shader_manager, PSOManager* psos, 
-		Texture_Manager* textures, std::string model_name, std::string matrix_file_name)
+		Texture_Manager* textures, std::string model_name, std::string matrix_file_name, bool if_VS_ani)
 	{
 		model_adjust = model_adjust.mul(Matrix::rotateY(M_PI / 2));
 		
@@ -19,7 +19,7 @@ public:
 		//save_instance_matrices(FILE_NAME_FENCE_MATRIX, model.instances_matix);
 		load_instance_matrices(matrix_file_name, model.instances_matix);
 
-		model.init(core, shader_manager, psos, textures, model_name);
+		model.init(core, shader_manager, psos, textures, model_name, if_VS_ani);
 		model.init_hitbox(core, shader_manager, psos, true);
 
 		for (unsigned int i = 0; i < model.instances_matix.size(); i++)

@@ -108,6 +108,7 @@ public:
 	float action_timer = 0.0f;
 
 	bool is_be_holding = false;
+	bool is_be_attacking = false;
 
 	virtual ~NPC_Base() = default;
 
@@ -160,7 +161,7 @@ public:
 	}
 
 protected:
-
+	//reset the action state
 	void update_action(float dt)
 	{
 		if (!is_doing_action) return;
@@ -593,8 +594,8 @@ public:
 		{
 			if (AABB::AABB_Intersect(attack_box, enemy->model.hitbox.world_aabb))
 			{
-				// TODO: enemy->take_damage();
 				enemy->suffer_attack(attack);
+				enemy->is_be_attacking = true;
 				return true;
 			}
 		}
