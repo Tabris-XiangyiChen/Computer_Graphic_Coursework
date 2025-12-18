@@ -20,6 +20,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	FILE* fp;
 	freopen_s(&fp, "CONOUT$", "w", stdout);
 
+	//create_matrix_files();
+
 	Window win;
 	Core core;
 	win.create("My Window", WINDOW_WIDTH, WINDOW_HEIGHT, 100, 0);
@@ -45,8 +47,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//Object_Animation fam;
 	//fam.init(&core, &sm, &psos, &tm,"Farmer-male");
 
-	Plane plane;
-	plane.init(&core, &psos, &sm, &tm, "brown_mud_leaves_alb");
+	//Plane plane;
+	//plane.init(&core, &psos, &sm, &tm, "brown_mud_leaves_alb");
+	Ground_Grid ground;
+	ground.init(&core, &psos, &sm, &tm, "grass_path", FILE_NAME_GROUND_MATRIX, false, false);
 	Sphere sphere;
 	sphere.init(&core, &psos, &sm, &tm, "sunny_rose_garden");
 	 
@@ -72,14 +76,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
 	Item_Ins_Base fence;
-	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX, false);
+	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX, false, true);
 	Item_Ins_Base flower;
-	flower.init(&core, &sm, &psos, &tm, "flower4", FILE_NAME_FLOWER_MATRIX, true);
+	flower.init(&core, &sm, &psos, &tm, "flower4", FILE_NAME_FLOWER_MATRIX, true, true);
 
 	std::vector<NPC_Base*> npc_vec;
 	npc_vec.push_back(&bull);
 	std::vector<Item_Ins_Base*> item_vec;
 	item_vec.push_back(&fence);
+
 
 	while (1) {
 		float dt = timer.dt();
@@ -105,9 +110,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		core.beginRenderPass();
 		cm.update_frameData(&core, dt);
 
-		plane.draw(&core, world, camera_.view_projection);
+		//plane.draw(&core, world, camera_.view_projection);
 		sphere.draw(&core, world, camera_.view_projection);
-
+		ground.draw(&core, camera_.view_projection);
 		//tree.update(world, camera_.view_projection);
 		//tree.draw(&core);
 

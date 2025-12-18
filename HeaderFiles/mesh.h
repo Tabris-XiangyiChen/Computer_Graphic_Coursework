@@ -226,13 +226,13 @@ public:
 		init_instance_buffer(core, instances, maxInstanceNum);
 	}
 
-	void init(Core* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices, std::vector<INSTANCE>& instances, unsigned int maxInstanceNum = 100)
+	void init(Core* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices, std::vector<INSTANCE>& instances, unsigned int maxInstanceNum = 1000)
 	{
 		init(core, &vertices[0], sizeof(STATIC_VERTEX), vertices.size(), &indices[0], indices.size(), instances, maxInstanceNum);
 		inputLayoutDesc = VertexLayoutCache::getStatictLayoutInstanced();
 	}
 
-	void init_animation(Core* core, std::vector<ANIMATED_VERTEX> vertices, std::vector<unsigned int> indices, std::vector<INSTANCE>& instances, unsigned int maxInstanceNum = 100)
+	void init_animation(Core* core, std::vector<ANIMATED_VERTEX> vertices, std::vector<unsigned int> indices, std::vector<INSTANCE>& instances, unsigned int maxInstanceNum = 1000)
 	{
 		init(core, &vertices[0], sizeof(ANIMATED_VERTEX), vertices.size(), &indices[0], indices.size(), instances, maxInstanceNum);
 		inputLayoutDesc = VertexLayoutCache::getStatictLayoutInstanced();

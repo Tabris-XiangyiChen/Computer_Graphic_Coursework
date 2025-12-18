@@ -31,9 +31,9 @@ public:
 	PSOManager* psos;
 
 	std::string vs_name = "VS_Static";
-	std::string ps_name = "PS_OnlyALB";
-	//std::string ps_name = "PS";
-	std::string pso_name = "StaticModel_OnlyALB_PSO";
+	//std::string ps_name = "PS_OnlyALB";
+	std::string ps_name = "PS";
+	std::string pso_name = "StaticModel_PSO";
 
 	std::string textureFilename;
 	Texture_Manager* textures;
@@ -56,10 +56,10 @@ public:
 		psos = _psos;
 		textures = _textures;
 		std::vector<STATIC_VERTEX> vertices;
-		vertices.push_back(addVertex(Vec3(-1000, 0, -1000), Vec3(0, 1, 0), 0, 0));
-		vertices.push_back(addVertex(Vec3(1000, 0, -1000), Vec3(0, 1, 0), 1, 0));
-		vertices.push_back(addVertex(Vec3(-1000, 0, 1000), Vec3(0, 1, 0), 0, 1));
-		vertices.push_back(addVertex(Vec3(1000, 0, 1000), Vec3(0, 1, 0), 1, 1));
+		vertices.push_back(addVertex(Vec3(-100, 0, -100), Vec3(0, 1, 0), 0, 0));
+		vertices.push_back(addVertex(Vec3(100, 0, -100), Vec3(0, 1, 0), 1, 0));
+		vertices.push_back(addVertex(Vec3(-100, 0, 100), Vec3(0, 1, 0), 0, 1));
+		vertices.push_back(addVertex(Vec3(100, 0, 100), Vec3(0, 1, 0), 1, 1));
 		std::vector<unsigned int> indices;
 		indices.push_back(0);
 		indices.push_back(1);
@@ -76,19 +76,22 @@ public:
 
 		//std::string tex_root_alb = "Models/Textures/bark05_ALB.png";
 		//std::string tex_root_alb = "Models/Textures/brown_mud_leaves_alb.png";
-		std::string tex_root_alb = "Models/Textures/" + filename + ".png";
+		std::string tex_root_alb = "Models/Textures/grass_path_2_diff_1k.png";
+		std::string tex_root_nh = "Models/Textures/grass_path_2_nor_dx_1k.png";
+		std::string tex_root_rmax = "Models/Textures/grass_path_2_arm_1k.png";
+		//std::string tex_root_alb = "Models/Textures/" + filename + ".png";
 		//std::string tex_root_nh = "Models/Textures/brown_mud_leaves_nh.png";
 		//std::string tex_root_rmax = "Models/Textures/brown_mud_leaves_rmax.png";
 		textureFilename = tex_root_alb;
 		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
-		textures->load_onlyALB(core, tex_root_alb, tex_root_alb);
+		//textures->load_onlyALB(core, tex_root_alb, tex_root_alb);
 		// 
-		//std::vector<std::string> filenames;
-		//filenames.push_back(tex_root_alb);
-		//filenames.push_back(tex_root_nh);
-		//filenames.push_back(tex_root_rmax);
-		// load 3 textures in the same matrial.
-		//textures->load(core, tex_root_alb, filenames);
+		std::vector<std::string> filenames;
+		filenames.push_back(tex_root_alb);
+		filenames.push_back(tex_root_nh);
+		filenames.push_back(tex_root_rmax);
+		 //load 3 textures in the same matrial.
+		textures->load(core, tex_root_alb, filenames);
 	}
 
 	void update(Matrix planeWorld, Matrix vp) {
@@ -142,7 +145,7 @@ public:
 
 	int rings= 500; 
 	int segments = 500;
-	float radius = 2500.f;
+	float radius = 10000.f;
 
 	STATIC_VERTEX addVertex(Vec3 p, Vec3 n, float tu, float tv)
 	{
@@ -483,10 +486,49 @@ public:
 			// load 3 textures in the same matrial.
 			textures->load(core, tex_root_alb, filenames);
 			
-			mesh->init(core, vertices, gemmeshes[i].indices, instances_matix);
+			mesh->init(core, vertices, gemmeshes[i].indices, instances_matix, instances_matix.size() + 10);
 			meshes.push_back(mesh);
 		}
 		hitbox.local_aabb.update_cache();
+	}
+
+	//ground retangle init
+	void init_mymesh(Core* core,Texture_Manager* _textures, std::string text_filename)
+	{
+		Mesh_Istancing* mesh = new Mesh_Istancing();
+		std::vector<STATIC_VERTEX> vertices;
+		vertices.push_back(addVertex(Vec3(-100, 0, -100), Vec3(0, 1, 0), 0, 0));
+		vertices.push_back(addVertex(Vec3(100, 0, -100), Vec3(0, 1, 0), 1, 0));
+		vertices.push_back(addVertex(Vec3(-100, 0, 100), Vec3(0, 1, 0), 0, 1));
+		vertices.push_back(addVertex(Vec3(100, 0, 100), Vec3(0, 1, 0), 1, 1));
+		std::vector<unsigned int> indices;
+		indices.push_back(0);
+		indices.push_back(1);
+		indices.push_back(2);
+		indices.push_back(1);
+		indices.push_back(3);
+		indices.push_back(2);
+		mesh->init(core, vertices, indices, instances_matix, instances_matix.size() + 10);
+		meshes.push_back(mesh);
+
+		//std::string tex_root_alb = "Models/Textures/bark05_ALB.png";
+		//std::string tex_root_alb = "Models/Textures/brown_mud_leaves_alb.png";
+		//std::string tex_root_alb = "Models/Textures/grass_path_2_diff_1k.png";
+		//std::string tex_root_nh = "Models/Textures/grass_path_2_nor_dx_1k.png";
+		//std::string tex_root_rmax = "Models/Textures/grass_path_2_arm_1k.png";
+		std::string tex_root_alb = "Models/Textures/" + text_filename + "_alb.png";
+		std::string tex_root_nh = "Models/Textures/" + text_filename + "_nh.png";
+		std::string tex_root_rmax = "Models/Textures/" + text_filename + "_rmax.png";
+		textureFilenames.push_back(tex_root_alb);
+		// Load texture with filename: gemmeshes[i].material.find("albedo").getValue()
+		//textures->load_onlyALB(core, tex_root_alb, tex_root_alb);
+		// 
+		std::vector<std::string> filenames;
+		filenames.push_back(tex_root_alb);
+		filenames.push_back(tex_root_nh);
+		filenames.push_back(tex_root_rmax);
+		//load 3 textures in the same matrial.
+		textures->load(core, tex_root_alb, filenames);
 	}
 
 	void init(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string filename, bool if_VS_ani)
@@ -508,6 +550,33 @@ public:
 		textures = _textures;
 		name = filename;
 		init_meshes(core, filename);
+		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
+		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
+		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStatictLayoutInstanced());
+	}
+
+	void init_my_mesh(Core* core, Shader_Manager* _shader_manager, PSOManager* _psos, Texture_Manager* _textures, std::string texturefilename, bool if_VS_ani, bool if_PS_trans)
+	{
+		if (if_VS_ani)
+		{
+			vs_name = "VS_Static_Ins_VAni";
+		}
+		if(!if_VS_ani)
+		{
+			vs_name = "VS_Static_Ins";
+		}
+		if (if_PS_trans)
+			ps_name = "PS_Trans";
+		if (!if_PS_trans)
+			ps_name = "PS";
+
+		pso_name = "StaticModel_Ins_PSO";
+		
+		shader_manager = _shader_manager;
+		psos = _psos;
+		textures = _textures;
+		name = texturefilename;
+		init_mymesh(core, textures, texturefilename);
 		shader_manager->load(core, vs_name, Shader_Type::VERTEX);
 		shader_manager->load(core, ps_name, Shader_Type::PIXEL);
 		psos->createPSO(core, pso_name, shader_manager->shaders[vs_name].shader, shader_manager->shaders[ps_name].shader, VertexLayoutCache::getStatictLayoutInstanced());

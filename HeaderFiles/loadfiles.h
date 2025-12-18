@@ -8,6 +8,7 @@
 
 #define FILE_NAME_FLOWER_MATRIX "Save/flower_matrix.txt"
 #define FILE_NAME_FENCE_MATRIX "Save/fence_matrix.txt"
+#define FILE_NAME_GROUND_MATRIX "Save/ground_matrix.txt"
 
 
 inline float random_float(float min_v, float max_v)
@@ -121,9 +122,9 @@ Matrix generate_random_grass_matrix(
 }
 
 void create_matixes(std::vector<INSTANCE>& matrixs, const Vec3& center, float range_x, float range_z,
-                float min_scale = 0.8f, float max_scale = 1.2f)
+                float min_scale, float max_scale,unsigned int num)
 {
-    for (unsigned int i = 0; i < 5; i++)
+    for (unsigned int i = 0; i < num; i++)
     {
         INSTANCE matrix;
         matrix.w = generate_random_grass_matrix(center, range_x, range_z, min_scale, max_scale);
@@ -131,8 +132,14 @@ void create_matixes(std::vector<INSTANCE>& matrixs, const Vec3& center, float ra
     }
 }
 
-std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float segmentLength,
-         Vec3 scale, Matrix adjust_matrix = Matrix(),float y = 0.0f)
+std::vector<INSTANCE> generateFenceRectangle(
+    const Vec3& center,
+    float width,
+    float depth,
+    float segmentLength,
+    Vec3 scale,
+    Matrix adjust_matrix = Matrix(),
+    float y = 0.0f)
 {
     std::vector<INSTANCE> instances;
 
@@ -144,7 +151,7 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
 
     auto addInstance = [&](float x, float z, float rotY)
         {
-            Matrix T = Matrix::Translate(Vec3( x, y, z ));
+            Matrix T = Matrix::Translate(Vec3(x, y, z));
             Matrix R = Matrix::rotateY(rotY);
             Matrix S = Matrix::Scaling(scale);
 
@@ -152,38 +159,87 @@ std::vector<INSTANCE> generateFenceRectangle(float width, float depth, float seg
             instances.push_back({ W });
         };
 
-    // +z
+    // +Z
     for (int i = 0; i < countX; ++i)
     {
-        float x = -halfW + i * segmentLength + segmentLength * 0.5f;
-        float z = halfD;
+        float x = center.x - halfW + i * segmentLength + segmentLength * 0.5f;
+        float z = center.z + halfD;
         addInstance(x, z, 0.0f);
     }
 
-    // -z
+    // -Z
     for (int i = 0; i < countX; ++i)
     {
-        float x = -halfW + i * segmentLength + segmentLength * 0.5f;
-        float z = -halfD;
+        float x = center.x - halfW + i * segmentLength + segmentLength * 0.5f;
+        float z = center.z - halfD;
         addInstance(x, z, M_PI);
     }
 
-    // +x
+    // +X
     for (int i = 0; i < countZ; ++i)
     {
-        float x = halfW;
-        float z = -halfD + i * segmentLength + segmentLength * 0.5f;
+        float x = center.x + halfW;
+        float z = center.z - halfD + i * segmentLength + segmentLength * 0.5f;
         addInstance(x, z, M_PI * 0.5f);
     }
 
-    // -x
+    // -X
     for (int i = 0; i < countZ; ++i)
     {
-        float x = -halfW;
-        float z = -halfD + i * segmentLength + segmentLength * 0.5f;
+        float x = center.x - halfW;
+        float z = center.z - halfD + i * segmentLength + segmentLength * 0.5f;
         addInstance(x, z, -M_PI * 0.5f);
     }
 
     return instances;
 }
 
+
+std::vector<INSTANCE> generateGroundGrid(
+    const Vec3& center,
+    float width,
+    float depth,
+    float tileSize,
+    Vec3 scale,
+    Matrix adjust_matrix = Matrix(),
+    float y = 0.0f)
+{
+    std::vector<INSTANCE> instances;
+
+    int countX = static_cast<int>(width / tileSize);
+    int countZ = static_cast<int>(depth / tileSize);
+
+    float halfW = width * 0.5f;
+    float halfD = depth * 0.5f;
+
+    for (int z = 0; z < countZ; ++z)
+    {
+        for (int x = 0; x < countX; ++x)
+        {
+            float posX = center.x - halfW + x * tileSize + tileSize * 0.5f;
+            float posZ = center.z - halfD + z * tileSize + tileSize * 0.5f;
+
+            Matrix T = Matrix::Translate(Vec3(posX, y, posZ));
+            Matrix S = Matrix::Scaling(scale);
+
+            Matrix W = T.mul(S).mul(adjust_matrix);
+            instances.push_back({ W });
+        }
+    }
+
+    return instances;
+}
+
+
+void create_matrix_files()
+{
+
+    std::vector<INSTANCE> flower_instanse;
+    create_matixes(flower_instanse, Vec3(0, 0, 0),2000.0f, 2000.0f, 0.5, 0.6, 200);
+    save_instance_matrices(FILE_NAME_FLOWER_MATRIX, flower_instanse);
+    //std::vector<INSTANCE> fence_instanse = generateFenceRectangle(Vec3(0, 0, 0), 2000.0f, 2000.0f, 100.0f, Vec3(100, 100, 100), Matrix().mul(Matrix::rotateY(M_PI / 2)));
+    //save_instance_matrices(FILE_NAME_FENCE_MATRIX, fence_instanse);
+    //std::vector<INSTANCE> ground_instanse = generateGroundGrid(Vec3(0, 0, 0), 4000.0f, 4000.0f, 200.0f, Vec3(1, 1, 1), Matrix());
+    //save_instance_matrices(FILE_NAME_GROUND_MATRIX, ground_instanse);
+
+}
