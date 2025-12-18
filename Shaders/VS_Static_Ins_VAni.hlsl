@@ -1,8 +1,7 @@
 cbuffer PerFrameBuffer : register(b2)
 {
-
 float time;
-float3 padding;
+float3 cam_pos;
 };
 
 cbuffer staticMeshBuffer : register(b1)

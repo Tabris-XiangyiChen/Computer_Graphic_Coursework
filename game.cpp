@@ -36,8 +36,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSOManager psos;
 	Texture_Manager tm;
 
-	//Object tree;
-	//tree.init(&core, &sm, &psos, &tm, "acacia");
+	Object tree;
+	tree.init(&core, &sm, &psos, &tm, "acacia");
 
 	//Object_Instance flower;
 	////Object flower;
@@ -56,7 +56,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	sphere.init(&core, &psos, &sm, &tm, "sunny_rose_garden");
 	 
 	UI_Manager um;
-	um.init(&core,  &sm, &psos, &tm, "Models/Textures/grass_path_alb.png");
+	UI_Number ui_num;
+	ui_num.init_digits(&core, &sm, &psos, &tm, &um, -0.9, 0.9, 0.1, 0.15, 0.005);
+
 
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
@@ -75,19 +77,34 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	bull.init_data();
 	bull.init(&core, &sm, &psos, &tm, "Bull-dark");
 	bull.set_target(&farmer);
+
 	float time = 0;
+	int fps = 0;
 	//std::cout << "out" << std::endl;
 
 
+	// items with hitbox
 	Item_Ins_Base fence;
 	fence.init(&core, &sm, &psos, &tm, "Fence_Wooden_Old_Full_26h", FILE_NAME_FENCE_MATRIX, false, true);
+	Item_Ins_Base fence2;
+	fence2.init(&core, &sm, &psos, &tm, "pine2", FILE_NAME_MAP_BOUNDRAY_MATRIX, false, true);
+	Item_Ins_Base metal_fence;
+	metal_fence.init(&core, &sm, &psos, &tm, "Fence_Metal_Full_14g", FILE_NAME_METAL_FENCE_MATRIX, false, true);
+
+	// no hitbox items
 	Item_Ins_Base flower;
-	flower.init(&core, &sm, &psos, &tm, "flower4", FILE_NAME_FLOWER_MATRIX, true, true);
+	flower.init(&core, &sm, &psos, &tm, "flower4", FILE_NAME_FLOWER_MATRIX, true, false);
+	Item_Ins_Base grass1;
+	grass1.init(&core, &sm, &psos, &tm, "Grass_Sets_Full_01e", FILE_NAME_GRASS_SET_MATRIX, true, false);
+	Item_Ins_Base grass2;
+	grass2.init(&core, &sm, &psos, &tm, "Dead_Plants_01d", FILE_NAME_GRASS_DEAD_MATRIX, true, false);
 
 	std::vector<NPC_Base*> npc_vec;
 	npc_vec.push_back(&bull);
 	std::vector<Item_Ins_Base*> item_vec;
 	item_vec.push_back(&fence);
+	item_vec.push_back(&fence2);
+	item_vec.push_back(&metal_fence);
 
 
 	while (1) {
@@ -104,6 +121,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		if (time > 1.0)
 		{
 			std::cout << camera_.position.get_string() << std::endl;
+			fps = static_cast<int>(1 / dt);
 			time = 0;
 		}
 			
@@ -112,13 +130,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		win.processMessages();
 
 		core.beginRenderPass();
-		cm.update_frameData(&core, dt);
+
+		cm.update_frameData(&core, dt, camera_.position);
 
 		//plane.draw(&core, world, camera_.view_projection);
 		sphere.draw(&core, world, camera_.view_projection);
 		ground.draw(&core, camera_.view_projection);
+
 		//tree.update(world, camera_.view_projection);
-		//tree.draw(&core);
+		tree.draw(&core, world, camera_.view_projection);
 
 		//flower.update(world, camera_.view_projection);
 		//flower.draw(&core, camera_.view_projection);
@@ -131,11 +151,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		bull.draw(&core, camera_.view_projection, dt, item_vec);
 
 		fence.draw(&core, camera_.view_projection);
+		fence2.draw(&core, camera_.view_projection);
+		metal_fence.draw(&core, camera_.view_projection);
 		flower.draw(&core, camera_.view_projection);
-		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
-		//fam.draw(&core);
+		grass1.draw(&core, camera_.view_projection);
+		grass2.draw(&core, camera_.view_projection);
 
-		um.draw(&core);
+		ui_num.draw_number(&core, fps);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{

@@ -20,7 +20,7 @@ struct alignas(16) ConstantBuffer2
 struct alignas(16) PER_FRAME_BUFFER
 {
 	float time;
-	float padding[3];
+	Vec3 cam_position;
 };
 
 //Shader Reflection(Code Reflection
@@ -175,36 +175,23 @@ public:
 	// for per frame buffer
 	void init_perframe_data()
 	{
-		//// 设置buffer大小（确保是16的倍数）
-		//per_frame.cbSizeInBytes = sizeof(PER_FRAME_BUFFER);
-
-		//// 初始化buffer资源（使用默认1024个draw calls）
-		//per_frame.init(core, 1024);
-
-		//// 设置buffer名称（可选，用于调试）
-		//per_frame.name = "PerFrameBuffer";
-
-		// 初始化时间数据
 		frameData.time = 0.0f;
-		memset(frameData.padding, 0, sizeof(frameData.padding));
+		frameData.cam_position = Vec3(0.0f, 0.0f, 0.0f);
 
 		std::cout << "Per-frame buffer initialized. Size: "
 			<< sizeof(PER_FRAME_BUFFER) << " bytes" << std::endl;
 	}
 
-	void update_frameData(Core* core, float currentTime)
+	void update_frameData(Core* core, float currentTime, Vec3 cam_pos)
 	{
 		frameData.time += currentTime;
+		frameData.cam_position = cam_pos;
 		if (!find("PerFrameBuffer"))
 			return;
-		// 更新到constant buffer
 
 		constantBuffers["PerFrameBuffer"].update("time", &frameData.time);
+		constantBuffers["PerFrameBuffer"].update("cam_pos", &frameData.cam_position);
 
-		//per_frame.update("time", &frameData.time);  // 如果使用自动反射
-
-		//// 或者直接更新整个结构：
-		//per_frame.updateBuffer(&frameData, sizeof(PER_FRAME_BUFFER));
 		core->getCommandList()->SetGraphicsRootConstantBufferView(4, constantBuffers["PerFrameBuffer"].getGPUAddress());
 		constantBuffers["PerFrameBuffer"].next();
 	}

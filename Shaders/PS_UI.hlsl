@@ -9,5 +9,11 @@ struct PS_INPUT
 
 float4 PS(PS_INPUT input) : SV_Target0
 {
-    return tex.Sample(samplerLinear, input.uv);
+    float4 texColor = tex.Sample(samplerLinear, input.uv);
+        
+    if (texColor.a < 0.5)
+    {
+        discard;
+    }
+    return texColor;
 }

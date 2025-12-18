@@ -62,10 +62,10 @@ public:
 
 		model.draw(core, vp);
 
-		for (unsigned int i = 0; i < world_hitboxs.size(); i++)
-		{
-			model.hitbox.draw(core, model.instances_matix[i].w, vp);
-		}
+		//for (unsigned int i = 0; i < world_hitboxs.size(); i++)
+		//{
+		//	model.hitbox.draw(core, model.instances_matix[i].w, vp);
+		//}
 	}
 };
 
