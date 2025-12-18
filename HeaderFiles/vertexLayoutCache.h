@@ -27,6 +27,12 @@ struct LINE_VERTEX
 	Vec3 pos;
 };
 
+struct UI_Vertex
+{
+	float pos[2];
+	float uv[2];
+};
+
 //Update layout for shader
 //– Need layout management
 //– Suggest simple class with static methods
@@ -94,6 +100,17 @@ public:
 		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		};
 		static const D3D12_INPUT_LAYOUT_DESC desc = { iHitboxnputLayoutStatic, 1 };
+		return desc;
+	}
+
+	static const D3D12_INPUT_LAYOUT_DESC& getUILayout() {
+		static const D3D12_INPUT_ELEMENT_DESC UILayoutStatic[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		};
+		static const D3D12_INPUT_LAYOUT_DESC desc = { UILayoutStatic, 2 };
 		return desc;
 	}
 };

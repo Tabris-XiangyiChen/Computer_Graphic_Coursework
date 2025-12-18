@@ -10,6 +10,7 @@ struct INSTANCE
 	Matrix w;
 };
 
+
 class Mesh
 {
 public:
@@ -92,6 +93,11 @@ public:
 	{
 		init(core, &vertices[0], sizeof(LINE_VERTEX), vertices.size(), &indices[0], indices.size());
 		inputLayoutDesc = VertexLayoutCache::getStaticLineLayout();
+	}
+	void init_ui(Core* core, std::vector<UI_Vertex> vertices, std::vector<unsigned int> indices)
+	{
+		init(core, &vertices[0], sizeof(UI_Vertex), vertices.size(), &indices[0], indices.size());
+		inputLayoutDesc = VertexLayoutCache::getUILayout();
 	}
 
 	void draw(Core* core)

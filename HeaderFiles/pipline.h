@@ -274,5 +274,83 @@ public:
 		core->getCommandList()->SetPipelineState(psos[name]);
 	}
 
+	void createPSO_UI(Core* core, std::string name, ID3DBlob* vs, ID3DBlob* ps, D3D12_INPUT_LAYOUT_DESC layout)
+	{
+		//– Check if PSO in map
+		//• Avoid creating extra state
 
+		if (psos.find(name) != psos.end())
+		{
+			return;
+		}
+
+		//Configure GPU pipeline with shaders, layout and Root Signature
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+		desc.InputLayout = layout;
+		//
+		desc.pRootSignature = core->rootSignature;
+		desc.VS = { vs->GetBufferPointer(), vs->GetBufferSize() };
+		desc.PS = { ps->GetBufferPointer(), ps->GetBufferSize() };
+
+		D3D12_RASTERIZER_DESC rasterDesc = {};
+		rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
+		rasterDesc.CullMode = D3D12_CULL_MODE_NONE;
+		rasterDesc.FrontCounterClockwise = FALSE;
+		rasterDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+		rasterDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+		rasterDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+		rasterDesc.DepthClipEnable = TRUE;
+		rasterDesc.MultisampleEnable = FALSE;
+		rasterDesc.AntialiasedLineEnable = FALSE;
+		rasterDesc.ForcedSampleCount = 0;
+		rasterDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+		desc.RasterizerState = rasterDesc;
+
+		D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
+		depthStencilDesc.DepthEnable = FALSE;
+		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		depthStencilDesc.StencilEnable = FALSE;
+		desc.DepthStencilState = depthStencilDesc;
+
+		//Blend State
+		D3D12_BLEND_DESC blendDesc = {};
+		blendDesc.AlphaToCoverageEnable = FALSE;
+		blendDesc.IndependentBlendEnable = FALSE;
+		const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = {
+			FALSE, FALSE,
+			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP,
+			D3D12_COLOR_WRITE_ENABLE_ALL
+		};
+		for (int i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+		{
+			blendDesc.RenderTarget[i] = defaultRenderTargetBlend;
+		}
+		desc.BlendState = blendDesc;
+
+		//Render Target State + Topology
+		desc.SampleMask = UINT_MAX;
+		desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		desc.NumRenderTargets = 1;
+		desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+		desc.SampleDesc.Count = 1;
+
+		//desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		//desc.NodeMask = 0;
+
+		//Create Pipeline State Object
+		ID3D12PipelineState* pso;
+		HRESULT hr = core->device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+
+		if (FAILED(hr)) {
+
+		}
+
+		//Insert into map
+		psos.insert({ name, pso });
+
+	}
 };

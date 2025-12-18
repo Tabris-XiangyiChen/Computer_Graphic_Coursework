@@ -9,6 +9,7 @@
 #include "HeaderFiles/player.h"
 #include "HeaderFiles/npcs.h"
 #include "HeaderFiles/map_item.h"
+#include "HeaderFiles/ui.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -54,6 +55,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Sphere sphere;
 	sphere.init(&core, &psos, &sm, &tm, "sunny_rose_garden");
 	 
+	UI_Manager um;
+	um.init(&core,  &sm, &psos, &tm, "Models/Textures/grass_path_alb.png");
+
 	//Camera camera(Vec3(10, 5, 10), Vec3(0, 1, 0), Vec3(0, 1, 0));
 	//camera.init((float)(WINDOW_WIDTH) / (float)(WINDOW_HEIGHT));
 	Camera camera_;
@@ -130,6 +134,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		flower.draw(&core, camera_.view_projection);
 		//fam.update(world, camera_.view_projection, dt, "idle basic 01");
 		//fam.draw(&core);
+
+		um.draw(&core);
 
 		if (win.keys[VK_ESCAPE] == 1)
 		{
