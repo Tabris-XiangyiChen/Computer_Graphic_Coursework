@@ -177,6 +177,38 @@ public:
 			pVec.v[0] * v[1] - pVec.v[1] * v[0]);
 	}
 
+	Vec3 rotateX(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x,
+			y * cosA - z * sinA,
+			y * sinA + z * cosA
+		);
+	}
+
+	// 3. 绕Y轴旋转（俯仰角，向上看为正，向下看为负）
+	Vec3 rotateY(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x * cosA + z * sinA,
+			y,
+			-x * sinA + z * cosA
+		);
+	}
+
+	// 4. 绕Z轴旋转（偏航角，向右转为正，向左转为负）
+	Vec3 rotateZ(float angleRadians) const {
+		float cosA = cosf(angleRadians);
+		float sinA = sinf(angleRadians);
+		return Vec3(
+			x * cosA - y * sinA,
+			x * sinA + y * cosA,
+			z
+		);
+	}
+
 	float Max() const
 	{
 		return max(x, max(y, z));
@@ -187,11 +219,15 @@ public:
 		return min(x, min(y, z));
 	}
 
-	std::string operator<< (const Vec3& pVec)
+	std::string get_string() const
 	{
 		return "{" + std::to_string(v[0]) + ", " + std::to_string(v[1]) + ", " + std::to_string(v[2]) + "}";
 	}
 
+	float operator[] (unsigned int index)
+	{
+		return v[index];
+	}
 };
 
 //4 dimention vector
@@ -569,7 +605,7 @@ public:
 			(v.x * m[12] + v.y * m[13] + v.z * m[14] + v.w * m[15]));
 	}
 
-	Vec3 mulPoint(const Vec3& v)
+	Vec3 mulPoint(const Vec3& v) const
 	{
 		return Vec3(
 			(v.x * m[0] + v.y * m[1] + v.z * m[2]) + m[3],
@@ -577,7 +613,7 @@ public:
 			(v.x * m[8] + v.y * m[9] + v.z * m[10]) + m[11]);
 	}
 
-	Vec3 mulVec(const Vec3& v)
+	Vec3 mulVec  (const Vec3& v) const
 	{
 		return Vec3(
 			(v.x * m[0] + v.y * m[1] + v.z * m[2]),
@@ -694,6 +730,14 @@ public:
 		mat.m[0] = v.x;
 		mat.m[5] = v.y;
 		mat.m[10] = v.z;
+		return mat;
+	}
+	static Matrix Scaling(const float v)
+	{
+		Matrix mat;
+		mat.m[0] = v;
+		mat.m[5] = v;
+		mat.m[10] = v;
 		return mat;
 	}
 

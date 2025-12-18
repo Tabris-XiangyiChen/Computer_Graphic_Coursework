@@ -31,6 +31,7 @@ public:
 	{
 		mousex = x;
 		mousey = y;
+		
 	}
 
 	void processMessages();

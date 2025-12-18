@@ -48,7 +48,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		window->updateMouse(WINDOW_GET_X_LPARAM(lParam), WINDOW_GET_Y_LPARAM(lParam));
 		return 0;
 	}
-
 	default:
 	{
 		return DefWindowProc(hwnd, msg, wParam, lParam);
