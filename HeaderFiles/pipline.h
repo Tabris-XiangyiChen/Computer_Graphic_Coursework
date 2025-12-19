@@ -178,7 +178,7 @@ public:
 		HRESULT hr = core->device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
 		
 		if (FAILED(hr)) {
-
+			std::cout << "11" << std::endl;
 		}
 
 		//Insert into map

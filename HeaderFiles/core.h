@@ -340,7 +340,7 @@ public:
 		rootParameterCBVS_Time.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameterCBVS_Time.Descriptor.ShaderRegister = 2; // Register(b2)
 		rootParameterCBVS_Time.Descriptor.RegisterSpace = 0;
-		rootParameterCBVS_Time.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		rootParameterCBVS_Time.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 		parameters.push_back(rootParameterCBVS_Time);
 
 		D3D12_ROOT_PARAMETER rootParameterCBVS_UI;

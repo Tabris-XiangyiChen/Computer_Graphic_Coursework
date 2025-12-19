@@ -10,6 +10,8 @@ struct PS_INPUT
     float3 Tangent : TANGENT;
     float2 TexCoords : TEXCOORD;
 };
+
+//simpe straight light
 static const float3 LIGHT_DIRECTION = normalize(float3(0, -1, -1));
 static const float3 LIGHT_COLOR = float3(1.0, 0.8, 1.0);
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
