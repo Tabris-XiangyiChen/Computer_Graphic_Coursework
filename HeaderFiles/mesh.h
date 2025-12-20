@@ -137,14 +137,12 @@ public:
 	{
 		maxInstances = maxInstanceCount;
 
-		// 指定实例缓冲区在GPU内存堆中
 		D3D12_HEAP_PROPERTIES heapProps = {};
 		//– Can be only in upload heap if instance data changes often
 		heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		heapProps.CreationNodeMask = 1;
 		heapProps.VisibleNodeMask = 1;
 
-		// 创建实例缓冲区描述
 		D3D12_RESOURCE_DESC instanceBufferDesc = {};
 		instanceBufferDesc.Width = maxInstanceCount * instanceSizeInBytes;
 		instanceBufferDesc.Height = 1;
@@ -155,21 +153,13 @@ public:
 		instanceBufferDesc.SampleDesc.Quality = 0;
 		instanceBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		// 创建实例缓冲区资源
-		HRESULT hr = core->device->CreateCommittedResource(
-			&heapProps,
-			D3D12_HEAP_FLAG_NONE,
-			&instanceBufferDesc,
-			D3D12_RESOURCE_STATE_COMMON,
-			NULL,
-			IID_PPV_ARGS(&instanceBuffer)
-		);
+		HRESULT hr = core->device->CreateCommittedResource(&heapProps,D3D12_HEAP_FLAG_NONE,&instanceBufferDesc,
+			D3D12_RESOURCE_STATE_COMMON, NULL,IID_PPV_ARGS(&instanceBuffer));
 
 		if (FAILED(hr)) {
 			return;
 		}
 
-		// 设置实例缓冲区视图
 		instanceView.BufferLocation = instanceBuffer->GetGPUVirtualAddress();
 		instanceView.StrideInBytes = instanceSizeInBytes;
 		instanceView.SizeInBytes = maxInstances * instanceSizeInBytes;

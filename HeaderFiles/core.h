@@ -167,7 +167,6 @@ public:
 			}
 		}
 		adapter = adapters[useAdapterIndex];
-		//factory->Release();
 
 		//Create DX12 Device on Adapter
 		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));
@@ -318,7 +317,7 @@ public:
 		//descriptor
 		D3D12_DESCRIPTOR_RANGE srvRange = {};
 		srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		srvRange.NumDescriptors = 2; // number of SRVs (t0–t7)
+		srvRange.NumDescriptors = 3; // number of SRVs (t0–t7)
 		srvRange.BaseShaderRegister = 0; // starting at t0
 		srvRange.RegisterSpace = 0;
 		srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -340,7 +339,7 @@ public:
 		rootParameterCBVS_Time.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParameterCBVS_Time.Descriptor.ShaderRegister = 2; // Register(b2)
 		rootParameterCBVS_Time.Descriptor.RegisterSpace = 0;
-		rootParameterCBVS_Time.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		rootParameterCBVS_Time.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 		parameters.push_back(rootParameterCBVS_Time);
 
 		D3D12_ROOT_PARAMETER rootParameterCBVS_UI;

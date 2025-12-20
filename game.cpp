@@ -130,7 +130,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		win.processMessages();
 
 		core.beginRenderPass();
-
 		cm.update_frameData(&core, dt, camera_.position);
 
 		//plane.draw(&core, world, camera_.view_projection);

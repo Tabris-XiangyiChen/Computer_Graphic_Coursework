@@ -124,7 +124,7 @@ public:
 class Texture_Manager
 {
 public:
-	std::map<std::string, Material* > materials;
+	std::unordered_map<std::string, Material* > materials;
 	void load(Core* core, std::string name, std::vector<std::string> filenames)
 	{
 		if (materials.find(name) != materials.end())
@@ -164,28 +164,5 @@ public:
 	void updateTexturePS(Core* core, std::string material)
 	{
 		core->getCommandList()->SetGraphicsRootDescriptorTable(2, get_material_GPU_handle(core, material));
-	}
-};
-
-class Texture_Manager1
-{
-public:
-	std::map<std::string, Texture* > textures;
-	void load(Core* core, std::string name)
-	{
-		if (textures.find(name) != textures.end())
-			return;
-
-		Texture* texture = new Texture;
-		texture->load(core, name);
-		textures.insert({ name, texture });
-	}
-
-	Texture* find(std::string name)
-	{
-		if (textures.find(name) != textures.end())
-			return textures[name];
-		else
-			return nullptr;
 	}
 };

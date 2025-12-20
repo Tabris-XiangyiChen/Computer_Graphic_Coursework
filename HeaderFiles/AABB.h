@@ -5,8 +5,8 @@
 struct CollisionResult
 {
 	bool hit = false;
-	Vec3 normal;     // 推开的方向
-	float depth = 0; // 推开的距离
+	Vec3 normal; 
+	float depth = 0;
 };
 
 
@@ -14,10 +14,9 @@ class AABB {
 public:
 	Vec3 m_min;
 	Vec3 m_max;
-	Vec3 m_center;      // 缓存中心点
-	Vec3 m_halfSize;    // 缓存半长
-	bool m_dirty;       // 脏标记
-
+	Vec3 m_center;
+	Vec3 m_halfSize; 
+	bool m_dirty; 
 	AABB() : m_min(FLT_MAX, FLT_MAX, FLT_MAX),
 		m_max(-FLT_MAX, -FLT_MAX, -FLT_MAX),
 		m_dirty(true) {
@@ -123,7 +122,7 @@ public:
 		return result;
 	}
 
-	inline static bool AABB_Intersect(const AABB& a, const AABB& b)
+	inline static bool AABB_intersect(const AABB& a, const AABB& b)
 	{
 		// is it separated on the x-axis?
 		if (a.m_max.x < b.m_min.x || a.m_min.x > b.m_max.x)
@@ -145,14 +144,14 @@ public:
 			m_max.z < other.m_min.z || m_min.z > other.m_max.z);
 	}
 
-	inline static bool Point_In_AABB(const Vec3& p, const AABB& box)
+	inline static bool point_in_AABB(const Vec3& p, const AABB& box)
 	{
 		return (p.x >= box.m_min.x && p.x <= box.m_max.x) &&
 			(p.y >= box.m_min.y && p.y <= box.m_max.y) &&
 			(p.z >= box.m_min.z && p.z <= box.m_max.z);
 	}
 
-	static CollisionResult AABB_Intersect_Depth(const AABB& a, const AABB& b)
+	static CollisionResult AABB_intersect_depth(const AABB& a, const AABB& b)
 	{
 		CollisionResult result;
 
@@ -167,7 +166,6 @@ public:
 		float overlapZ = a.m_halfSize.z + b.m_halfSize.z - std::abs(delta.z);
 		if (overlapZ <= 0) return result;
 
-		// 找最小穿透轴
 		result.hit = true;
 		result.depth = overlapX;
 		result.normal = Vec3((delta.x > 0) ? -1.f : 1.f, 0, 0);
@@ -188,7 +186,7 @@ public:
 	}
 
 
-	static bool Ray_Intersect_AABB(
+	static bool ray_intersect_AABB(
 		const Vec3& rayOrigin,
 		const Vec3& rayDir,
 		const AABB& box,

@@ -92,10 +92,6 @@ public:
 
 		unsigned int offset = offsetIndex * cbSizeInBytes;
 		memcpy(&buffer[offset], data, dataSize);
-
-		// 可选：输出调试信息
-		// std::cout << "Updated buffer at offset " << offset 
-		//           << ", size " << dataSize << std::endl;
 	}
 
 	void updateAtOffset(unsigned int offset, const void* data, unsigned int dataSize)
@@ -114,7 +110,6 @@ public:
 		memcpy(&buffer[bufferOffset], data, dataSize);
 	}
 
-	// 添加：设置buffer大小（在init之前调用）
 	void setSize(unsigned int size)
 	{
 		cbSizeInBytes = size;

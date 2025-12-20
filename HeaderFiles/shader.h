@@ -48,7 +48,18 @@ public:
 				NULL, NULL, "VS", "vs_5_0", 0, 0, &shader, &status);
 			if (FAILED(hr))
 			{
-				(char*)status->GetBufferPointer();
+				if (status)
+				{
+					std::string errorMsg(
+						(char*)status->GetBufferPointer(),
+						status->GetBufferSize()
+					);
+					std::cout << "Shader compile error:\n" << errorMsg << std::endl;
+				}
+				else
+				{
+					std::cout << "Shader compile failed, no error message." << std::endl;
+				}
 			}
 			break;
 		case Shader_Type::PIXEL :
@@ -56,7 +67,18 @@ public:
 				NULL, "PS", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &shader, &status);
 			if (FAILED(hr))
 			{
-				(char*)status->GetBufferPointer();
+				if (status)
+				{
+					std::string errorMsg(
+						(char*)status->GetBufferPointer(),
+						status->GetBufferSize()
+					);
+					std::cout << "Shader compile error:\n" << errorMsg << std::endl;
+				}
+				else
+				{
+					std::cout << "Shader compile failed, no error message." << std::endl;
+				}
 			}
 			break;
 		}
@@ -64,7 +86,6 @@ public:
 
 	unsigned int reflect(Core* core)
 	{
-		std::unordered_map<std::string, unsigned int>  map;
 		ID3D12ShaderReflection* reflection;
 		D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(), IID_PPV_ARGS(&reflection));
 		D3D12_SHADER_DESC desc;
@@ -127,6 +148,7 @@ class Shader_Manager
 	
 public:
 	std::unordered_map<std::string, Shader> shaders;
+	//didnt use
 	ConstantBuffer_Manager* cb_manager;
 
 	void init(Core* core, ConstantBuffer_Manager* _cb_manager)

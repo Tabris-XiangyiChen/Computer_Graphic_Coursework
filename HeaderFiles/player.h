@@ -279,7 +279,7 @@ public:
 
 	Camera* camera;
 	ThirdPersonCameraController third_cam;
-
+	//state data
 	Vec3 position;
 	Vec3 forward;
 	Vec3 up;
@@ -296,7 +296,7 @@ public:
 	Charactor_State move_state;
 	Charactor_State_Helper move_state_helper;
 	float current_animation_speed = 1.0f;
-
+	//state control
 	bool is_carrying = false;
 	NPC_Base* carrying_item = nullptr;
 	bool is_doing_action = false;   // is attacking / grabing
@@ -312,13 +312,11 @@ public:
 		farmer.hitbox.local_aabb.m_max.x = 40.0f;
 		farmer.init_hitbox(core, shader_manager, psos, true);
 
-		// 设置位置，使模型站在原点，面朝Y轴正方向
 		//position = Vec3(x_offset, y_offset, ground_offset);
 		position = Vec3(0, 0, 0);
 
-		// 初始化朝向
-		forward = Vec3(0, 0, 1);  // 初始面朝Z轴正方向
-		up = Vec3(0, 1, 0);       // Y轴向上
+		forward = Vec3(0, 0, 1);
+		up = Vec3(0, 1, 0);
 		right = up.Cross(forward).Normalize();
 		//std::cout << "Adjusted position: " << position.get_string() << std::endl;
 
@@ -438,11 +436,9 @@ public:
 		Vec3 move_dir(0, 0, 0);
 		move_state = is_carrying ? Charactor_State::IDLE_WHEELBARROW : Charactor_State::IDLE_BASIC_01;
 
-		// 获取相机在地面平面上的方向
 		Vec3 cam_forward_flat = camera->get_forward_flat();
 		Vec3 cam_right_flat = camera->get_right_flat();
 
-		// 基于相机方向的移动输入
 		if (window->keys['W'])
 		{
 			move_dir = move_dir + cam_forward_flat;
@@ -520,10 +516,9 @@ public:
 			//move_state = Charactor_State::IDLE_BASIC_01;
 		}
 
-		// 更新世界矩阵
 		update_world_matrix();
 	}
-
+	// check and reset the charactor state
 	void update_action(float dt)
 	{
 		if (!is_doing_action)
@@ -592,7 +587,7 @@ public:
 
 		for (NPC_Base* enemy : enemies)
 		{
-			if (AABB::AABB_Intersect(attack_box, enemy->model.hitbox.world_aabb))
+			if (AABB::AABB_intersect(attack_box, enemy->model.hitbox.world_aabb))
 			{
 				enemy->suffer_attack(attack);
 				enemy->is_be_attacking = true;
@@ -626,9 +621,8 @@ public:
 
 		for (NPC_Base* item : items)
 		{
-			if (AABB::AABB_Intersect(pickup_box, item->model.hitbox.world_aabb) && item->is_dead)
+			if (AABB::AABB_intersect(pickup_box, item->model.hitbox.world_aabb) && item->is_dead)
 			{
-				// TODO: 绑定物体到角色（先只标记）
 				item->is_be_holding = true;
 				carrying_item = item;
 				return true;
@@ -644,7 +638,7 @@ public:
 
 		if (nowE && !lastE && !is_doing_action)
 		{
-			// 当前没拿东西 → 尝试拾取
+			// try carray
 			if (!is_carrying)
 			{
 				is_doing_action = true;
@@ -658,7 +652,6 @@ public:
 					is_carrying = true;
 				}
 			}
-			// 当前拿着 → 放下
 			else
 			{
 				is_doing_action = true;
@@ -703,6 +696,6 @@ public:
 			if (cross.y < 0)
 				angle = -angle;
 
-			return angle; // 弧度
+			return angle;
 		}
 };

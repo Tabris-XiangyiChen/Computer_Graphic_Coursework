@@ -317,9 +317,11 @@ public:
 	Shader_Manager* shader_manager;
 	PSOManager* psos;
 
-	std::string vs_name = "VS_Static";
-	std::string ps_name = "PS_Trans";
-	std::string pso_name = "StaticModel_Trans_PSO";
+	std::string vs_name = "VS_Static_POM";
+	std::string ps_name = "PS_POM";
+	//std::string vs_name = "VS_Static";
+	//std::string ps_name = "PS_Trans";
+	std::string pso_name = "StaticModel_Trans_POM_PSO";
 
 	//std::vector<std::vector<std::string>> textureFilenames;
 	std::vector<std::string> textureFilenames;

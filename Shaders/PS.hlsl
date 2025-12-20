@@ -10,6 +10,8 @@ struct PS_INPUT
     float3 Tangent : TANGENT;
     float2 TexCoords : TEXCOORD;
 };
+
+//simpe straight light
 static const float3 LIGHT_DIRECTION = normalize(float3(0, -1, -1));
 static const float3 LIGHT_COLOR = float3(1.0, 0.8, 1.0);
 static const float3 AMBIENT_COLOR = float3(1.0, 1.0, 1.0);
@@ -30,9 +32,8 @@ float4 PS(PS_INPUT input) : SV_Target0
     
     float diffuseIntensity = max(0, dot(worldNormal, -LIGHT_DIRECTION));
     
-    float DIFFUSE_MULTIPLIER = 1.5;
     float3 ambient = AMBIENT_COLOR;
-    float3 diffuse = LIGHT_COLOR * diffuseIntensity * DIFFUSE_MULTIPLIER;
+    float3 diffuse = LIGHT_COLOR * diffuseIntensity;
     
     float3 finalColor = textureColor.rgb * (ambient + diffuse);
     
