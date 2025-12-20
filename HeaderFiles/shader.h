@@ -86,7 +86,6 @@ public:
 
 	unsigned int reflect(Core* core)
 	{
-		std::unordered_map<std::string, unsigned int>  map;
 		ID3D12ShaderReflection* reflection;
 		D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(), IID_PPV_ARGS(&reflection));
 		D3D12_SHADER_DESC desc;
@@ -149,6 +148,7 @@ class Shader_Manager
 	
 public:
 	std::unordered_map<std::string, Shader> shaders;
+	//didnt use
 	ConstantBuffer_Manager* cb_manager;
 
 	void init(Core* core, ConstantBuffer_Manager* _cb_manager)

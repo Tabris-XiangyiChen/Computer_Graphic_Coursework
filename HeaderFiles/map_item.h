@@ -85,8 +85,6 @@ public:
 		
 		grounds.init_my_mesh(core, _shader_manager, _psos, _textures, filename, if_VS_ani, if_PS_trans);
 
-
-		//load_instance_matrices(matrix_file_name, grounds.instances_matix);
 	}
 
 

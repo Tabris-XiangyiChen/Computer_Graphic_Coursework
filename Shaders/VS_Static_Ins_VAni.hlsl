@@ -40,7 +40,6 @@ PS_INPUT VS(VS_INPUT input)
     wind += sin(time * 2.0 + input.Pos.z * 2.0) * 0.1;
 
     float3 windOffset = float3(wind * 0.3, 0.0, wind * 0.2) * heightFactor;
-    
 
     float4 worldPos = mul(float4(input.Pos.xyz + windOffset, 1.0), input.World);
     output.Pos = mul(worldPos, VP);

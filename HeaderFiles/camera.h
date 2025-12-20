@@ -120,23 +120,22 @@ public:
         target = position + forward;
     }
 
-    // 获取相机在地面平面上的方向（忽略垂直分量）
     Vec3 get_forward_flat() const
     {
         Vec3 flat_forward = forward;
-        flat_forward.y = 0;  // 如果Y是垂直轴，忽略Y分量
+        flat_forward.y = 0; 
         if (flat_forward.length() > 0.001f)
             return flat_forward.Normalize();
-        return Vec3(0, 0, 1);  // 默认前向
+        return Vec3(0, 0, 1);
     }
 
     Vec3 get_right_flat() const
     {
         Vec3 flat_right = right;
-        flat_right.y = 0;  // 如果Y是垂直轴，忽略Y分量
+        flat_right.y = 0; 
         if (flat_right.length() > 0.001f)
             return flat_right.Normalize();
-        return Vec3(1, 0, 0);  // 默认右向
+        return Vec3(1, 0, 0); 
     }
 private:
 
@@ -178,7 +177,7 @@ private:
         float centerY = window->height * 0.5f;
 
         float xoffset = window->mousex - centerX;
-        float yoffset = centerY - window->mousey;  // 注意 Y 轴反向
+        float yoffset = centerY - window->mousey;
 
         xoffset *= mouse_sensitivity;
         yoffset *= mouse_sensitivity;
@@ -202,7 +201,7 @@ private:
         static float last_x = 0, last_y = 0;
         static bool firstMouse = true;
 
-        if (window->mousex != last_x && window->mousey != last_y)  // 鼠标右键
+        if (window->mousex != last_x && window->mousey != last_y) 
         {
             if (firstMouse)
             {
@@ -247,8 +246,6 @@ public:
     Vec3* target_pos;    // charactor positino
 
     float distance = 200.0f;       // distance to the charactor
-    float min_distance = 10.0f;
-    float max_distance = 50.0f;
 
     float yaw = 0.0f;
     float pitch = 20.0f;
@@ -296,7 +293,7 @@ private:
         if (key_1_now && !key_1_last)
         {
             mouse_free = !mouse_free;
-            mouse_lock_initialized = false; // 强制重新初始化
+            mouse_lock_initialized = false;
         }
 
         key_1_last = key_1_now;
@@ -307,7 +304,7 @@ private:
         if (mouse_free)
         {
             ShowCursor(TRUE);
-            ClipCursor(NULL);        // 释放鼠标限制
+            ClipCursor(NULL);
             mouse_lock_initialized = false;
             return;
         }
@@ -350,69 +347,39 @@ private:
 
         pitch = clamp(pitch, -30.0f, 80.0f);
 
-        // 用完立即把鼠标拉回中心（关键）
+        // drag the mouse back to the center 
         POINT p{ (LONG)centerX, (LONG)centerY };
         ClientToScreen(window->hwnd, &p);
         SetCursorPos(p.x, p.y);
     
     }
 
-    //void update_mouse(Window* window)
-    //{
-    //    if (!mouse_look_enabled)
-    //        return;
-    //    RECT r;
-    //    GetClientRect(window->hwnd, &r);
-    //    int center_x = (r.right - r.left) / 2;
-    //    int center_y = (r.bottom - r.top) / 2;
-    //    // 当前鼠标位置（已经是相对窗口的）
-    //    float dx = window->mousex - center_x;
-    //    float dy = window->mousey - center_y;
-    //    dx *= mouse_sensitivity;
-    //    dy *= mouse_sensitivity;
-    //    yaw -= dx;
-    //    pitch += dy;
-    //    pitch = clamp(pitch, -40.0f, 80.0f);
-    //    SetCursorPos(window->width / 2, window->height / 2);
-    //}
-
-    //void update_zoom(Window* window)
-    //{
-    //    distance -= window->mouse_scroll * 0.5f;
-    //    distance = clamp(distance, min_distance, max_distance);
-    //}
-
     void update_camera_transform()
     {
-        Vec3 orbit_target = *target_pos + target_offset;
+        Vec3 target = *target_pos + target_offset;
 
-        float radYaw = yaw * M_PI / 180.0f;
-        float radPitch = pitch * M_PI / 180.0f;
+        float radiusYaw = yaw * M_PI / 180.0f;
+        float radiusPitch = pitch * M_PI / 180.0f;
 
-        // 球坐标 → 偏移
         Vec3 offset;
-        offset.x = distance * cos(radPitch) * cos(radYaw);
-        offset.z = distance * cos(radPitch) * sin(radYaw);  // Z轴作为水平面
-        offset.y = distance * sin(radPitch);                // Y轴作为垂直轴
+        offset.x = distance * cos(radiusPitch) * cos(radiusYaw);
+        offset.z = distance * cos(radiusPitch) * sin(radiusYaw);
+        offset.y = distance * sin(radiusPitch);
 
-        // 3. 设置相机位置
-        camera->position = orbit_target + offset;
+        camera->position = target + offset;
 
-        // 4. 设置相机看向目标点
-        camera->target = orbit_target;
+        // Set the camera to look at the target point.
+        camera->target = target;
 
-        // 5. 重新计算相机方向向量
         camera->forward = (camera->target - camera->position).Normalize();
 
-        Vec3 world_up = Vec3(0, 1, 0);  // Y轴向上
+        Vec3 world_up = Vec3(0, 1, 0);
         camera->right = camera->forward.Cross(world_up).Normalize();
         camera->up = camera->right.Cross(camera->forward).Normalize();
 
-        // 6. 更新相机的yaw和pitch（保持同步）
         camera->pitch = pitch;
         camera->yaw = yaw;
-
-        // 7. 更新相机矩阵
+        //update vp matirxs
         camera->update_matrices();
     }
 };

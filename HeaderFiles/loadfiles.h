@@ -80,11 +80,7 @@ bool load_instance_matrices( const std::string filename, std::vector<INSTANCE>& 
         {
             for (int c = 0; c < 4; ++c)
             {
-                if (!(ss >> m.a[r][c]))
-                {
-                    std::cerr << "Invalid matrix format in file\n";
-                    return false;
-                }
+                ss >> m.a[r][c];
             }
         }
 
@@ -238,9 +234,9 @@ std::vector<INSTANCE> generateGroundGrid(
 void create_matrix_files()
 {
 
-    //std::vector<INSTANCE> flower_instanse;
-    //create_matixes(flower_instanse, Vec3(0, 0, 0),2000.0f, 2000.0f, 0.5, 0.6, 800);
-    //save_instance_matrices(FILE_NAME_FLOWER_MATRIX, flower_instanse);
+    std::vector<INSTANCE> flower_instanse;
+    create_matixes(flower_instanse, Vec3(0, 0, 0),2000.0f, 2000.0f, 0.5, 0.6, 800);
+    save_instance_matrices(FILE_NAME_FLOWER_MATRIX, flower_instanse);
     //std::vector<INSTANCE> fence_instanse = generateFenceRectangle(Vec3(0, 0, 0), 2000.0f, 2000.0f, 100.0f, Vec3(100, 100, 100), Matrix().mul(Matrix::rotateY(M_PI / 2)));
     //save_instance_matrices(FILE_NAME_FENCE_MATRIX, fence_instanse);
     ////std::vector<INSTANCE> ground_instanse = generateGroundGrid(Vec3(0, 0, 0), 14000.0f, 14000.0f, 200.0f, Vec3(1, 1, 1), Matrix());
@@ -255,6 +251,6 @@ void create_matrix_files()
 
     //std::vector<INSTANCE> fence2_instanse = generateFenceRectangle(Vec3(0, 0, 0), 4300.0f, 4300.0f, 300.0f, Vec3(1, 1, 1), Matrix().mul(Matrix::rotateY(M_PI / 2)));
     //save_instance_matrices(FILE_NAME_MAP_BOUNDRAY_MATRIX, fence2_instanse);
-    std::vector<INSTANCE> fence3_instanse = generateFenceRectangle(Vec3(0, 0, 0), 4000.0f, 4000.0f, 250.0f, Vec3(100, 100, 100), Matrix().mul(Matrix::rotateY(M_PI / 2)));
-    save_instance_matrices(FILE_NAME_METAL_FENCE_MATRIX, fence3_instanse);
+    //std::vector<INSTANCE> fence3_instanse = generateFenceRectangle(Vec3(0, 0, 0), 4000.0f, 4000.0f, 250.0f, Vec3(100, 100, 100), Matrix().mul(Matrix::rotateY(M_PI / 2)));
+    //save_instance_matrices(FILE_NAME_METAL_FENCE_MATRIX, fence3_instanse);
 }

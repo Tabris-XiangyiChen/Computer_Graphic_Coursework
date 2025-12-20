@@ -45,16 +45,10 @@
     <FxCompile Include="Shaders\VS_Static_Ins_VAni.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PS_U.hlsl">
-      <Filter>Source Files\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\VS_UI.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PS_UI.hlsl">
-      <Filter>Source Files\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\PS_PM.hlsl">
       <Filter>Source Files\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\VS_Static_POM.hlsl">

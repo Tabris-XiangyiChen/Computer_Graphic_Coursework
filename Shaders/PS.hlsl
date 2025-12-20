@@ -32,9 +32,8 @@ float4 PS(PS_INPUT input) : SV_Target0
     
     float diffuseIntensity = max(0, dot(worldNormal, -LIGHT_DIRECTION));
     
-    float DIFFUSE_MULTIPLIER = 1.5;
     float3 ambient = AMBIENT_COLOR;
-    float3 diffuse = LIGHT_COLOR * diffuseIntensity * DIFFUSE_MULTIPLIER;
+    float3 diffuse = LIGHT_COLOR * diffuseIntensity;
     
     float3 finalColor = textureColor.rgb * (ambient + diffuse);
     

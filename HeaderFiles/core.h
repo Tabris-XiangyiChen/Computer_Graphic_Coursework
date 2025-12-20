@@ -167,7 +167,6 @@ public:
 			}
 		}
 		adapter = adapters[useAdapterIndex];
-		//factory->Release();
 
 		//Create DX12 Device on Adapter
 		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));
@@ -318,7 +317,7 @@ public:
 		//descriptor
 		D3D12_DESCRIPTOR_RANGE srvRange = {};
 		srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		srvRange.NumDescriptors = 2; // number of SRVs (t0–t7)
+		srvRange.NumDescriptors = 3; // number of SRVs (t0–t7)
 		srvRange.BaseShaderRegister = 0; // starting at t0
 		srvRange.RegisterSpace = 0;
 		srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;

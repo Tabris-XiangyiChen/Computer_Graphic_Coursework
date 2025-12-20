@@ -31,13 +31,13 @@ float4 PS(PS_INPUT input) : SV_Target0
     float3 tangent = normalize(input.Tangent);
     float3 binormal = normalize(cross(normal, tangent));
     float3x3 TBN = float3x3(tangent, binormal, normal);
-
+    //Convert View direction into texture space
     float3 viewDirWorld = normalize(cam_pos - input.Pos_w.xyz);
     float3 viewDirTS = mul(viewDirWorld, transpose(TBN));
-
+    //Compute step size
     float3 scaledViewDir = viewDirTS * HEIGHT_SCALE;
     float stepSize = 1.0 / NUM_STEPS;
-    
+    //Step through texture space until intersection
     float2 currentTexCoords = input.TexCoords;
     float currentHeight = 0;
     for (int i = 0; i < NUM_STEPS; i++)

@@ -278,7 +278,7 @@ public:
 			return;
 		}
 
-		if (dist < attack_range && AABB::AABB_Intersect(model.hitbox.world_aabb, target->farmer.hitbox.world_aabb))
+		if (dist < attack_range && AABB::AABB_intersect(model.hitbox.world_aabb, target->farmer.hitbox.world_aabb))
 		{
 			do_attack();
 			return;
