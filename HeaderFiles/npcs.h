@@ -173,7 +173,7 @@ public:
 	Main_Charactor* target = nullptr;
 
 	float vision_range = 500.0f;
-	float attack_range = 200.0f;
+	float attack_range = 180.0f;
 	Matrix model_adjust;
 	float time;
 
