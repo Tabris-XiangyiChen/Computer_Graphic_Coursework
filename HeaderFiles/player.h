@@ -690,7 +690,7 @@ public:
 			Vec3 t = to.Normalize();
 
 			float dot = clamp(f.Dot(t), -1.0f, 1.0f);
-			float angle = acosf(dot); // 0 ~ PI
+			float angle = acosf(dot);
 
 			Vec3 cross = f.Cross(t);
 			if (cross.y < 0)
